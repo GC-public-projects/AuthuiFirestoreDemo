@@ -19,7 +19,7 @@ mini project that mix Authui and Firestore
 - start in test mode
 
 ## Link app to project
-- again in Firebase site go to settings (gear icon nect to "project Overview")
+- again in Firebase site go to settings (gear icon next to "project Overview")
 - in General > your apps 
 - click on Android Icon
 - insert app package name : "com.example.authuifirestoredemo"

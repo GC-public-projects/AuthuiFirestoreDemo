@@ -67,6 +67,8 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation ("com.firebaseui:firebase-ui-auth:8.0.2")
     implementation("com.google.android.gms:play-services-auth:20.7.0") // ! v21 not compatible with AuthUi
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
