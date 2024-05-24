@@ -19,7 +19,7 @@ class MainViewModel: ViewModel() {
 
     // AuthUi methods purpose
 
-    private fun getUser() { // when app reopen
+    private fun getUser() { // when app reopens
         // !! without "?" before ".let" the code is executed whatever the var is null or not
         FirebaseAuth.getInstance().currentUser?.let {
             _signInStatus.value = "Signed In"
