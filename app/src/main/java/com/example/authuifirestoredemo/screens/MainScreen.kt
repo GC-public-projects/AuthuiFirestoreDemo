@@ -24,7 +24,7 @@ import com.google.firebase.auth.FirebaseUser
 fun MainScreen() {
     val viewModel: MainViewModel = viewModel()
     var showSignIn by remember { mutableStateOf(false) }
-    val modifyShowSignIn = { value: Boolean -> showSignIn = value}
+    val modifyShowSignIn = { value: Boolean -> showSignIn = value }
     val signInStatus by viewModel.signInStatus.collectAsStateWithLifecycle()
     val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
 
@@ -40,10 +40,9 @@ fun MainScreen() {
     // --------------------------------
     if (showSignIn) {
         SignInScreen { result ->
-            // (4) Handle the sign-in result callback
-            if (result.resultCode == RESULT_OK) {
-                viewModel.onSignedIn()
-            } else {
+            // (4) Handle the sign-in result callback if not OK
+            // no need to handle when RESULT_OK thanks to the AuthListener
+            if (result.resultCode != RESULT_OK) {
                 val response = result.idpResponse
                 if (response == null) {
                     viewModel.onSignInCancel()
@@ -52,7 +51,6 @@ fun MainScreen() {
                     viewModel.onSignInError(errorCode)
                 }
             }
-
             showSignIn = false
         }
     }
@@ -71,13 +69,7 @@ fun MyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
-        // AUTHUI
-        // ---------
-
-        Spacer(Modifier.padding(2.dp))
         Text("Sign-in Status: $signInStatus")
-
-        Spacer(Modifier.padding(2.dp))
         Text("User name: ${signedInUser?.displayName ?: ""}")
         Text("User Id: ${signedInUser?.uid ?: ""}")
 

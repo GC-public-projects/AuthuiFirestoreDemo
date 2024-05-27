@@ -90,7 +90,7 @@ This composable take an onSignInresult function as param taht will be executed l
 - create the Intent of the sign-in/Sign-up and launch the AuthUI Activity
 - thanks to the function as param, the result of the tasks done in the activity will be handled later.
 
-### function creation
+### function content
 - create package "screens" in the main package (the one of the MainActivity)
 - create Kotlin class/file inside with the content :
 - import the dependencies
@@ -122,58 +122,66 @@ fun SignInScreen(onSignInResult: (FirebaseAuthUIAuthenticationResult) -> Unit) {
     }
 }
 ```
+## 2. AuthManager
+Singleton (object) taht implements FirebaseAuth.AuthStateListener 
 
-## 2. MainViewModel
-Viewmodel attached to the main screen
+### Purpose
+The object contents as flow the signed in user (FirebasUser) from FirebaseAuth.getInstance() and the signiedInStatus crated by us.  
+By implementing the AuthStateListener we ensure we have the status and the data in real time of the Firebase user. The singleton will let us get the Auth data in many places without needing to use the dependency injection.XXXXXX??? or better with XXXXXXXXXXXXXXXXXXXX
 
 ### Components explanations
-- As when the app is closed, the user remains logged in, it is important in the init block to check the Firebase user status when the activity is launched in order to display the correct info.
-
-To follow : FirebaseAuthlistner needs to be implemented to justify the use of the flows
 
 
-### Class creation
+### object content
 ``` kotlin
-class MainViewModel: ViewModel() {
-    // AuthUI properties purpose
-    private val _signInStatus = MutableStateFlow("Not Signed-in")
-    val signInStatus = _signInStatus.asStateFlow()
+object AuthManager : FirebaseAuth.AuthStateListener {
+    private val _firebaseAuth: FirebaseAuth by lazy {
+        FirebaseAuth.getInstance()
+    }
     private val _signedInUser = MutableStateFlow<FirebaseUser?>(null)
     val signedInUser = _signedInUser.asStateFlow()
+    private val _signInStatus = MutableStateFlow("Not Signed-in")
+    val signInStatus = _signInStatus.asStateFlow()
 
     init {
-        getUser()
+        _firebaseAuth.addAuthStateListener(this)
     }
 
-    // AuthUi methods purpose
-
-    private fun getUser() { // when app reopens
-        // !! without "?" before ".let" the code is executed whatever the var is null or not
-        FirebaseAuth.getInstance().currentUser?.let {
-            _signInStatus.value = "Signed In"
-            _signedInUser.value = FirebaseAuth.getInstance().currentUser
-        }
-    }
-    fun onSignedIn() {
-        getUser()
-    }
-    fun onSignOut() {
-        FirebaseAuth.getInstance().signOut()
-        _signInStatus.value = "Not Signed-in"
-        _signedInUser.value = null
-    }
-    fun onSignInCancel() {
-        onSignOut()
+    override fun onAuthStateChanged(auth: FirebaseAuth) {
+        _signedInUser.value = _firebaseAuth.currentUser
+        _signInStatus.value = if (_signedInUser.value == null) "Not Signed In" else "Signed in"
     }
 
-    fun onSignInError(errorCode: Int?) {
-        _signInStatus.value = "Failed - Error Code: $errorCode"
-        _signedInUser.value = null
+    fun updateSignInStatus(status: String) {
+        _signInStatus.value = status
     }
 }
 ```
 
-## 3. MainScreen & MyColumn composables
+
+## 3. MainViewModel
+Viewmodel attached to the main screen
+
+
+### Class creation
+```kotlin
+class MainViewModel: ViewModel() {
+    val signedInUser = AuthManager.signedInUser
+    val signInStatus = AuthManager.signInStatus
+    
+    fun onSignOut() {
+        FirebaseAuth.getInstance().signOut()
+    }
+    fun onSignInCancel() {
+        onSignOut()
+    }
+    fun onSignInError(errorCode: Int?) {
+        AuthManager.updateSignInStatus("Failed - Error Code: $errorCode")
+    }
+}
+```
+
+## 4. MainScreen & MyColumn composables
 
 ### Purpose 
 - show the SIgnin status and some info of the Signed in user
@@ -184,13 +192,13 @@ class MainViewModel: ViewModel() {
 - use of "MyColumn" in order to make the composables steless
 - showSignIn boolean flag obligatory because the Onclick from a button cannot contains a composable. So the composable SIgnInScreen is displayed after the flag becomes true
 
-### functions creations
+### functions content
 ``` kotlin
 @Composable
 fun MainScreen() {
     val viewModel: MainViewModel = viewModel()
     var showSignIn by remember { mutableStateOf(false) }
-    val modifyShowSignIn = { value: Boolean -> showSignIn = value}
+    val modifyShowSignIn = { value: Boolean -> showSignIn = value }
     val signInStatus by viewModel.signInStatus.collectAsStateWithLifecycle()
     val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
 
@@ -206,10 +214,9 @@ fun MainScreen() {
     // --------------------------------
     if (showSignIn) {
         SignInScreen { result ->
-            // (4) Handle the sign-in result callback
-            if (result.resultCode == RESULT_OK) {
-                viewModel.onSignedIn()
-            } else {
+            // (4) Handle the sign-in result callback if not OK
+            // no need to handle when RESULT_OK thanks to the AuthListener
+            if (result.resultCode != RESULT_OK) {
                 val response = result.idpResponse
                 if (response == null) {
                     viewModel.onSignInCancel()
@@ -218,7 +225,6 @@ fun MainScreen() {
                     viewModel.onSignInError(errorCode)
                 }
             }
-
             showSignIn = false
         }
     }
@@ -237,13 +243,7 @@ fun MyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
-        // AUTHUI
-        // ---------
-
-        Spacer(Modifier.padding(2.dp))
         Text("Sign-in Status: $signInStatus")
-
-        Spacer(Modifier.padding(2.dp))
         Text("User name: ${signedInUser?.displayName ?: ""}")
         Text("User Id: ${signedInUser?.uid ?: ""}")
 
