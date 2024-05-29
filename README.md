@@ -1,4 +1,4 @@
-# AuthuiFirestoreDemo
+# AuthuiFirestoreDemo (in progress... )
 mini project that mix Authui and Firestore
 
 # Init
