@@ -105,7 +105,7 @@ dependencies {
 
 # AuthUI implementation
 
-## 1. Authui SignIn screen (composable)
+## 1 Authui SignIn screen (composable)
 This composable take an onSignInresult function as param taht will be executed later by rememberLauncherForActivityResult. We will pass the content of the function during the call of the composable later.  
   
 ### Purpose 
@@ -145,7 +145,7 @@ fun SignInScreen(onSignInResult: (FirebaseAuthUIAuthenticationResult) -> Unit) {
     }
 }
 ```
-## 2. AuthManager (object)
+## 2 AuthManager (object)
 Singleton (object) that implements FirebaseAuth.AuthStateListener 
 
 ### Purpose
@@ -187,8 +187,8 @@ object AuthManager : FirebaseAuth.AuthStateListener {
 ```
 
 
-## 3. MainViewModel (class)
-Viewmodel attached to the main screen
+## 3 MainViewModel (class)
+Viewmodel linked to "MainScreen"
 
 ### Purpose
 Call the Auth Manager
@@ -214,7 +214,7 @@ class MainViewModel: ViewModel() {
 }
 ```
 
-## 4. MainScreen & MyColumn (composables)
+## 4 MainScreen & MyColumn (composables)
 
 ### Purpose 
 - show the Signin status and some info of the Signed in user
@@ -300,7 +300,7 @@ fun MyColumn(
 }
 ```
 
-## 5. MainActivity (composable)
+## 5 MainActivity (composable)
 For the moment, the purpose is just to call MainScreen()  
 
 ### Class content
@@ -334,7 +334,7 @@ The repositories will follow the approach of non-null returned value as soon as 
 
 
 
-## 1. Models
+## 1 Models
 the 2 models are "data classes". This kind of classe is especially used to serialize/unserialize the documents from FireStore or Real time Database. 
 
 ### 1.1 City (data class)
@@ -373,7 +373,7 @@ data class UserData (
 }
 ```
 
-## 2. Repositories
+## 2 Repositories
 
 
 ### 2.1 CityRepository (interface)
@@ -397,6 +397,8 @@ interface CityRepository {
 contract again with same purpose but for the Firestore UserDataRepository
 
 #### Interface content
+- in package "repos"
+- create kotlin class/file > interface named "UserDataRepository"
 ``` kotlin
 interface UserDataRepository {
     suspend fun addOrUpdateUserData(firebaseUser: FirebaseUser, userData: UserData)
@@ -405,8 +407,482 @@ interface UserDataRepository {
 }
 ```
 
+### 2.3 FirestoreDB (object)
+Singleton that content the instance of the Firestore DB
+
+#### Components explanations
+By lazy is used here but not mandatory as the object instanciations are implicitely lazy. If "lazy is not explicitely used" like that "val instance = Firebase.firestore", it works but Android Studio displays A warning about potential memory leaks du to static fields.
+
+#### Object content
+- in package "repos"
+- create package "firestore"
+- inside create kotlin class/file > object named "FirestoreDB"
+``` kotlin
+object FirestoreDB {
+    val instance: FirebaseFirestore by lazy {
+        Firebase.firestore
+    }
+}
+```
+
+### 2.4 FirestoreCityRepository (class)
+implementation of the CityRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "cities" collection
+
+#### Class content
+- in package "firestore"
+- create kotlin class/file > class named "FirestoreCityRepository "
+``` kotlin
+class FirestoreCityRepository(private val db: FirebaseFirestore): CityRepository {
+    override suspend fun addCity(city: City) {
+        db
+            .collection("cities")
+
+            // for custom ID
+            //.document("${city.name}")
+            //.set(city)
+
+            // for auto ID
+            .add(city)
+    }
+
+    override suspend fun fetchAllCities(): List<City> {
+        val cities = mutableListOf<City>()
+        val querySnapshot = db
+            .collection("cities")
+            .get()
+            .await()
+
+        for (document in querySnapshot.documents) {
+            val city = document.toObject(City::class.java)
+            city?.let {
+                cities.add(city)
+            }
+        }
+        return cities
+    }
+
+    override suspend fun fetchAllCitiesWithListener(): Flow<List<City>> = callbackFlow {
+        val citiesCollection = db.collection("cities")
+
+        val subscription = citiesCollection.addSnapshotListener { querySnapshot, exception ->
+            if (exception != null) {
+                close(exception)
+                return@addSnapshotListener
+            }
+
+            // cities must be in the snapshotListener in order it gets update from DB
+            val cities = mutableListOf<City>()
+
+            querySnapshot?.documents?.forEach { document ->
+                val city = document.toObject(City::class.java)
+                city?.let {
+                    cities.add(city)
+                }
+            }
+            trySend(cities).isSuccess
+        }
+
+        awaitClose { subscription.remove() }
+    }
+
+    override suspend fun fetchAllCitiesAndIdWithListener(): Flow<List<Pair<City, String>>> = callbackFlow{
+        val citiesCollection = db.collection("cities")
+
+        val subscription = citiesCollection.addSnapshotListener { querySnapshot, exception ->
+            if (exception != null) {
+                close(exception)
+                return@addSnapshotListener
+            }
+
+            // citiesAndId must be in the snapshotListener in order it gets update from DB
+            val citiesAndId = mutableListOf<Pair<City, String>>()
+
+            querySnapshot?.documents?.forEach { document ->
+                val city = document.toObject(City::class.java)
+                val id = document.id
+                city?.let {
+                    citiesAndId.add(Pair(city, id))
+                }
+            }
+            trySend(citiesAndId).isSuccess
+
+        }
+
+        awaitClose { subscription.remove() }
+    }
+
+    override suspend fun deleteCity(cityId: String) {
+        // do not delete the collections inside the document !
+        db.collection("cities").document(cityId)
+            .delete()
+            .addOnSuccessListener { Log.d(TAG, "DocumentSnapshot successfully deleted!") }
+            .addOnFailureListener { e -> Log.w(TAG, "Error deleting document", e) }
+    }
+}
+```
+
+### 2.5 FirestoreUserDataRepository (class)
+implementation of the UserDataRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "userdata" collection
+
+#### Class content
+- in package "firestore"
+- create kotlin class/file > class named "FirestoreUserDataRepository"
+``` kotlin
+class FirestoreUserDataRepository {
+    class FirestoreUserDataRepository(
+        private val db: FirebaseFirestore
+    ) : UserDataRepository {
+        override suspend fun addOrUpdateUserData(
+            firebaseUser: FirebaseUser,
+            userData: UserData
+        ) {
+            // the .set function create or update a document if it already exists
+            db.collection("userdata")
+                .document(firebaseUser.uid)
+                .set(userData)
+        }
+
+        override suspend fun fetchUserData(userId: String): UserData {
+            return try {
+                val querySnapShot = db.collection("userdata")
+                    .document(userId)
+                    .get()
+                    .await()
+
+                // if obect is null > return of an empty UserData object
+                querySnapShot.toObject(UserData::class.java) ?: UserData()
+            } catch (e: FirebaseFirestoreException) {
+                if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                    Log.e("FetchUserData", "Unauthorized access: ${e.message}")
+                    UserData("Unauthorized access", 0)
+                } else {
+                    Log.e("FetchUserData", "Firestore error: ${e.message}")
+                    UserData("Firestore error", 0)
+                }
+            }
+        }
+
+        override suspend fun fetchUserDataWithListener(userId: String): Flow<UserData> =
+            callbackFlow {
+
+                val userDataRef = db.collection("userdata").document(userId)
+
+                val subscription = userDataRef.addSnapshotListener { documentSnapshot, exception ->
+                    if (exception != null) {
+                        close(exception)
+                        return@addSnapshotListener
+                    }
+
+                    val userData = documentSnapshot?.toObject(UserData::class.java) ?: UserData()
+                    trySend(userData).isSuccess
+
+                }
+
+                awaitClose { subscription.remove() }
+            }
+    }
+}
+```
 
 
+## 3 ViewModels
+
+### 3.1 CitiesViewModel (class)
+ViewModel linked to "CitiesScreen"
+
+#### Class content
+- in package "screens"
+- create kotlin class/file > class named "CitiesViewModel"
+``` kotlin
+class CitiesViewModel(
+    private val cityRepository: CityRepository
+) : ViewModel() {
+    companion object {
+        fun provideFactory(
+            cityRepository: CityRepository
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+            ): T {
+                if (modelClass.isAssignableFrom(CitiesViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return CitiesViewModel(cityRepository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+    }
+
+    // FireStore properties purpose
+    private val _citiesList = mutableStateListOf<City>()
+    val citiesList: List<City> = _citiesList
+
+    private val _citiesFlowWithListener = MutableStateFlow(emptyList<City>())
+    val citiesFlowWithListener: StateFlow<List<City>> = _citiesFlowWithListener.asStateFlow()
+
+    private val _citiesAndIdFlowWithListener = MutableStateFlow(emptyList<Pair<City, String>>())
+    val citiesAndIdFlowWithListener: StateFlow<List<Pair<City, String>>> = _citiesAndIdFlowWithListener.asStateFlow()
+
+    init {
+        // get all cities
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // cites without listener affectation
+                cityRepository.fetchAllCities().forEach {
+                    _citiesList.add(it)
+                }
+            }
+        }
+        // get all cities with listener
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // flow collection of cities with listener
+                cityRepository.fetchAllCitiesWithListener().collect {
+                    _citiesFlowWithListener.value = it
+                }
+            }
+        }
+        // get all cities with listener and ID
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // flow collection of cities and ID with listener
+                cityRepository.fetchAllCitiesAndIdWithListener().collect {
+                    _citiesAndIdFlowWithListener.value = it
+                }
+            }
+        }
+    }
+    // FireStore methods purpose
+    fun createCityToDatabase(name: String, state: String, country: String) {
+        val city = City(name, state, country, System.currentTimeMillis())
+        // use of launch > no return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                cityRepository.addCity(city)
+            }
+        }
+    }
+    fun deleteCity(id: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                cityRepository.deleteCity(id)
+            }
+        }
+    }
+}
+```
+
+### 3.2 ProfileViewModel (class)
+ViewModel linked to "ProfileScreen"
+
+#### Class content
+- in package "screens"
+- create kotlin class/file > class named "ProfileViewModel"
+``` kotlin
+class ProfileViewModel(
+    private val userDataRepository: UserDataRepository
+) : ViewModel() {
+    companion object {
+        fun provideFactory(
+            userDataRepository: UserDataRepository
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+            ): T {
+                if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return ProfileViewModel(userDataRepository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+    }
+    private val _signedInUser = MutableStateFlow<FirebaseUser?>(null)
+    val signedInUser = _signedInUser.asStateFlow()
+
+    private val _userData = MutableStateFlow<UserData>(UserData())
+    val userData = _userData.asStateFlow()
+
+    private val _targetedUserData = mutableStateOf(UserData())
+    val targetedUserData: State<UserData> = _targetedUserData
+
+
+    init {
+        _signedInUser.value = FirebaseAuth.getInstance().currentUser
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                    _signedInUser.value?.let { firebaseUser ->
+                        userDataRepository.fetchUserDataWithListener(firebaseUser.uid).collect {
+                            _userData.value = it
+                        }
+                    }
+            }
+        }
+    }
+    fun createUserDataToDatabase(nickName: String, age: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                _signedInUser.value?.let {
+                    userDataRepository.addOrUpdateUserData(_signedInUser.value!!, UserData(nickName, age))
+                }
+            }
+        }
+    }
+    // purpose : check rules in firestore
+    fun getUserDataFromDb(userId: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                _targetedUserData.value = userDataRepository.fetchUserData(userId)
+            }
+        }
+    }
+}
+```
+
+## 4 Views
+
+### 4.4 CitiesScreen (composable)
+
+#### Composable content
+- in package "screens"
+- create Kotlin class/file named "CitiesScreen"
+``` kotlin
+@Composable
+fun CitiesScreen(cityRepository: CityRepository) {
+
+    val viewModel: CitiesViewModel = viewModel(
+        factory = CitiesViewModel.provideFactory(cityRepository)
+    )
+
+    var cityName by remember { mutableStateOf("") }
+    val modifyCityName = { name: String -> cityName = name }
+    val citiesWithoutListener = viewModel.citiesList
+    val citiesWithListener by viewModel.citiesFlowWithListener.collectAsState()
+    val citiesAndIdWithListener by viewModel.citiesAndIdFlowWithListener.collectAsState()
+
+    MyColumn(
+        viewModel = viewModel,
+        cityName = cityName,
+        modifyCityName = modifyCityName,
+        citiesWithoutListener = citiesWithoutListener,
+        citiesWithListener = citiesWithListener,
+        citiesAndIdWithListener = citiesAndIdWithListener
+    )
+}
+
+@Composable
+fun MyColumn(
+    viewModel: CitiesViewModel,
+    cityName: String,
+    modifyCityName: (String) -> Unit,
+    citiesWithoutListener: List<City>,
+    citiesWithListener: List<City>,
+    citiesAndIdWithListener: List<Pair<City, String>>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        // Create City
+        // --------------
+        Text(text = "create city Name")
+        TextField(value = cityName, onValueChange = modifyCityName)
+        Button(onClick = {
+            viewModel.createCityToDatabase(name = cityName, state = "default", country = "default")
+        }) {
+            Text("Add city to DB")
+        }
+        Spacer(Modifier.padding(2.dp))
+
+        // Get cities without listener
+        // ----------------------------
+        Text(text = "Show all cities from the DB without listener")
+        LazyColumn(modifier = Modifier.height(200.dp)) {
+            items(citiesWithoutListener) { city ->
+                CityListItem(city = city)
+            }
+        }
+
+        // Get cities with listener
+        // ----------------------------
+        Text(text = "Show all cities from the DB with listener")
+        LazyColumn(modifier = Modifier.height(200.dp)) {
+            items(citiesWithListener) { city ->
+                CityListItem(city = city)
+            }
+        }
+
+        // Get cities and ID with listener
+        // ----------------------------------
+        Text(text = "Show all cities with listener and deletable")
+        LazyColumn(modifier = Modifier.height(200.dp)) {
+            items(citiesAndIdWithListener) { pair ->
+                CityListItemDeletable(city = pair.first, id = pair.second, viewModel = viewModel)
+            }
+        }
+    }
+}
+// City list item
+@Composable
+fun CityListItem(city: City) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxWidth()
+            .clickable { },
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(text = city.name ?: "blank")
+            Text(text = city.country ?: "blank")
+            Text(text = city.state ?: "blank")
+        }
+    }
+}
+
+// City list item deletable
+@Composable
+fun CityListItemDeletable(city: City, id: String, viewModel: CitiesViewModel) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxWidth()
+            .clickable { },
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(text = city.name ?: "blank")
+                Text(text = city.country ?: "blank")
+                Text(text = city.state ?: "blank")
+            }
+            IconButton(
+                onClick = { viewModel.deleteCity(id) },
+                content = {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.Red
+                    )
+                }
+            )
+        }
+    }
+}
+```
 
 
 
