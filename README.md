@@ -1,10 +1,25 @@
-# AuthuiFirestoreDemo (in progress... )
-mini project that mix Authui and Firestore
+# AuthuiFirestoreDemo (Project Workable, Documentation in progress... )
+mini project that mix Authui and Firestore by using Jetpack Compose as toolkit and Kotlin for the language
+
+## Presentation
+The goal of this demo is to show how the Firestore DB can be called and how the data can be handled after fetching or before sending it to the DB. 
+As it is better to use the less code we can in order to gain in understanding, we will use "Authui", a library that will create for us the screens with the fields needed (activities) to authenticate.  
+Then we will create 2 collections of documents in the Firestore DB and some "CRUD" functions to interact with the data in real time or not.   
+Some rules will be created via The Firebase Console (site) in order to make the data handled with read and/or write rights in funtion of our needs. In short, one collection (cities) will be available for non and authenticated users and the documents of the other collection (userData) will be available only for the users they belong.  
+As we use Jetpack Compose, the patern MVVM (model, view viewModel) will be used to sort the data, the features and the views.
+Except an exception of Firestore "permission" necessary for understanding, to obtain the shortest possible code, the other exceptions will not be managed.
+
+## Warning
+- The version of the dependencies used here are workable for the project. I figured out, some new versions are not compatible for the moment with some components of our project. I reported the ones that make issues but in the future, it is possible some other new versions of some other libraries wont be compatible too.
+
+- With Authui, "Email Enumeration protection" doesn't work, so the use of this library is not a good way to make the app secure. In addition, i had some problems to use the Google authentication way with it, that's why only the mail authentication way will be used here.
+
+
 
 # Init
-
-- create FireBase project in https://console.firebase.google.com/ and enable Google Analytics if needed
+- create FireBase project in https://console.firebase.google.com/ and enable Google Analytics if needed.
 - create Jetpack Compose project in Android Studio
+- chose for the 2 projects the same name : "AuthuiFirestoreDemo"
 
 
 ## Firebase Auth
@@ -106,7 +121,7 @@ dependencies {
 # AuthUI implementation
 
 ## 1 Authui SignIn screen (composable)
-This composable take an onSignInresult function as param taht will be executed later by rememberLauncherForActivityResult. We will pass the content of the function during the call of the composable later.  
+This composable take an onSignInresult function as param that will be executed later by rememberLauncherForActivityResult. We will pass the content of the function during the call of the composable later.  
   
 ### Purpose 
 - setup the authentication providers (Mail, google, Github, etc...) (Just "mail" is setup)
@@ -116,7 +131,7 @@ This composable take an onSignInresult function as param taht will be executed l
 ### function content
 - create package "screens" in the main package (the one of the MainActivity)
 - create Kotlin class/file inside with the content :
-- import the dependencies (to do all the time for each content)
+- import the dependencies (to do all the time for each content and wont be specified anymore !)
 ``` kotlin
 @Composable
 fun SignInScreen(onSignInResult: (FirebaseAuthUIAuthenticationResult) -> Unit) {
