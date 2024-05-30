@@ -18,17 +18,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.authuifirestoredemo.NavRoutes
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    navController: NavController
+) {
     val viewModel: MainViewModel = viewModel()
     var showSignIn by remember { mutableStateOf(false) }
-    val modifyShowSignIn = { value: Boolean -> showSignIn = value }
+    val modifyShowSignIn = { value: Boolean -> showSignIn = value}
     val signInStatus by viewModel.signInStatus.collectAsStateWithLifecycle()
     val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
 
     MyColumn(
+        navController = navController,
         signInStatus = signInStatus,
         signedInUser = signedInUser,
         modifyShowSignIn = modifyShowSignIn,
@@ -40,8 +45,8 @@ fun MainScreen() {
     // --------------------------------
     if (showSignIn) {
         SignInScreen { result ->
-            // (4) Handle the sign-in result callback if not OK
-            // no need to handle when RESULT_OK thanks to the AuthListener
+            // (4) Handle the sign-in result callback
+            // no need to handle RESULT_OK thanks to the AuthStateListener
             if (result.resultCode != RESULT_OK) {
                 val response = result.idpResponse
                 if (response == null) {
@@ -58,18 +63,26 @@ fun MainScreen() {
 
 @Composable
 fun MyColumn(
+    navController: NavController,
     signInStatus: String,
     signedInUser: FirebaseUser?,
     modifyShowSignIn: (Boolean) -> Unit,
     viewModel: MainViewModel
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
+        // AUTHUI
+        // ---------
+
+        Spacer(Modifier.padding(2.dp))
         Text("Sign-in Status: $signInStatus")
+
+        Spacer(Modifier.padding(2.dp))
         Text("User name: ${signedInUser?.displayName ?: ""}")
         Text("User Id: ${signedInUser?.uid ?: ""}")
 
@@ -86,6 +99,30 @@ fun MyColumn(
             viewModel.onSignOut()
         }) {
             Text("Sign Out")
+        }
+
+
+        // FIRESTORE
+        // ------------
+
+        // Go to UserDataScreen
+        // ------------------------
+        Spacer(Modifier.padding(5.dp))
+        Button(onClick = {
+            navController.navigate(NavRoutes.Profile.route)
+        }
+        ) {
+            Text(text = "Go to profile")
+        }
+
+        // Go to CitiesScreen
+        // ------------------------
+        Spacer(Modifier.padding(5.dp))
+        Button(onClick = {
+            navController.navigate(NavRoutes.Cities.route)
+        }
+        ) {
+            Text(text = "Go to Cities")
         }
     }
 }

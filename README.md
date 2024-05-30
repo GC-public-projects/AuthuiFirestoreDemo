@@ -250,7 +250,7 @@ fun MainScreen() {
     if (showSignIn) {
         SignInScreen { result ->
             // (4) Handle the sign-in result callback if not OK
-            // no need to handle when RESULT_OK thanks to the AuthListener
+            // no need to handle RESULT_OK thanks to the AuthStateListener
             if (result.resultCode != RESULT_OK) {
                 val response = result.idpResponse
                 if (response == null) {
@@ -528,59 +528,57 @@ implementation of the UserDataRepository interface by using FirestoreDB as depen
 - in package "firestore"
 - create kotlin class/file > class named "FirestoreUserDataRepository"
 ``` kotlin
-class FirestoreUserDataRepository {
-    class FirestoreUserDataRepository(
-        private val db: FirebaseFirestore
-    ) : UserDataRepository {
-        override suspend fun addOrUpdateUserData(
-            firebaseUser: FirebaseUser,
-            userData: UserData
-        ) {
-            // the .set function create or update a document if it already exists
-            db.collection("userdata")
-                .document(firebaseUser.uid)
-                .set(userData)
-        }
-
-        override suspend fun fetchUserData(userId: String): UserData {
-            return try {
-                val querySnapShot = db.collection("userdata")
-                    .document(userId)
-                    .get()
-                    .await()
-
-                // if obect is null > return of an empty UserData object
-                querySnapShot.toObject(UserData::class.java) ?: UserData()
-            } catch (e: FirebaseFirestoreException) {
-                if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                    Log.e("FetchUserData", "Unauthorized access: ${e.message}")
-                    UserData("Unauthorized access", 0)
-                } else {
-                    Log.e("FetchUserData", "Firestore error: ${e.message}")
-                    UserData("Firestore error", 0)
-                }
-            }
-        }
-
-        override suspend fun fetchUserDataWithListener(userId: String): Flow<UserData> =
-            callbackFlow {
-
-                val userDataRef = db.collection("userdata").document(userId)
-
-                val subscription = userDataRef.addSnapshotListener { documentSnapshot, exception ->
-                    if (exception != null) {
-                        close(exception)
-                        return@addSnapshotListener
-                    }
-
-                    val userData = documentSnapshot?.toObject(UserData::class.java) ?: UserData()
-                    trySend(userData).isSuccess
-
-                }
-
-                awaitClose { subscription.remove() }
-            }
+class FirestoreUserDataRepository(
+    private val db: FirebaseFirestore
+) : UserDataRepository {
+    override suspend fun addOrUpdateUserData(
+        firebaseUser: FirebaseUser,
+        userData: UserData
+    ) {
+        // the .set function create or update a document if it already exists
+        db.collection("userdata")
+            .document(firebaseUser.uid)
+            .set(userData)
     }
+
+    override suspend fun fetchUserData(userId: String): UserData {
+        return try {
+            val querySnapShot = db.collection("userdata")
+                .document(userId)
+                .get()
+                .await()
+
+            // if obect is null > return of an empty UserData object
+            querySnapShot.toObject(UserData::class.java) ?: UserData()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                Log.e("FetchUserData", "Unauthorized access: ${e.message}")
+                UserData("Unauthorized access", 0)
+            } else {
+                Log.e("FetchUserData", "Firestore error: ${e.message}")
+                UserData("Firestore error", 0)
+            }
+        }
+    }
+
+    override suspend fun fetchUserDataWithListener(userId: String): Flow<UserData> =
+        callbackFlow {
+
+            val userDataRef = db.collection("userdata").document(userId)
+
+            val subscription = userDataRef.addSnapshotListener { documentSnapshot, exception ->
+                if (exception != null) {
+                    close(exception)
+                    return@addSnapshotListener
+                }
+
+                val userData = documentSnapshot?.toObject(UserData::class.java) ?: UserData()
+                trySend(userData).isSuccess
+
+            }
+
+            awaitClose { subscription.remove() }
+        }
 }
 ```
 
@@ -742,7 +740,7 @@ class ProfileViewModel(
 
 ## 4 Views
 
-### 4.4 CitiesScreen (composable)
+### 4.1 CitiesScreen (composable)
 
 #### Composable content
 - in package "screens"
@@ -883,14 +881,123 @@ fun CityListItemDeletable(city: City, id: String, viewModel: CitiesViewModel) {
     }
 }
 ```
-test
+
+### 4.2 ProfileScreen (composable)
+
+#### Composable content
+- in package "screens"
+- create Kotlin class/file named "ProfileScreen"
+``` kotlin
+@Composable
+fun ProfileScreen(
+    userDataRepository: UserDataRepository,
+) {
+    val viewModel: ProfileViewModel = viewModel(
+        factory = ProfileViewModel.provideFactory(userDataRepository)
+    )
+    val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
+    val userData by viewModel.userData.collectAsStateWithLifecycle()
+    val targetedUserData by viewModel.targetedUserData
+    var nickName by remember { mutableStateOf("") }
+    val modifyNickName = { name: String -> nickName = name }
+    var age by remember { mutableStateOf("") }
+    val modifyAge = { value: String ->
+        val onlyNumbers = value.filter { it.isDigit() }
+        age = onlyNumbers
+    }
+
+    // targeted userData init (id of Test user)
+    viewModel.getUserDataFromDb("INSERT ONE USER ID HERE !!")
+
+    MyColumn(
+        viewModel = viewModel,
+        signedInUser = signedInUser ,
+        userData = userData,
+        targetedUserData = targetedUserData,
+        nickName = nickName,
+        modifyNickName = modifyNickName,
+        age = age,
+        modifyAge = modifyAge
+    )
+}
+
+@Composable
+fun MyColumn(
+    viewModel: ProfileViewModel,
+    signedInUser: FirebaseUser?,
+    userData: UserData,
+    targetedUserData: UserData,
+    nickName: String,
+    modifyNickName: (String) -> Unit,
+    age: String,
+    modifyAge: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+
+        // logged user Data
+        // ----------------------
+        Text(text = "Data of current user", textDecoration = TextDecoration.Underline)
+        Spacer(Modifier.padding(2.dp))
+
+        Text("User name: ${ signedInUser?.displayName ?: "not logged in"}")
+        Text("User Id: ${ signedInUser?.uid ?: "not logged in"}")
+
+        Spacer(modifier = Modifier.padding(5.dp))
+        Text(text = "Nickname: ${ userData.nickname ?: "not logged in or setup yet" }")
+        Text(text = "Age: ${ userData.age ?: "not logged in or setup yet" }")
+
+
+        // create/update userdata
+        // -------------------------
+        Spacer(modifier = Modifier.padding(5.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Nickname :")
+            TextField(value = nickName, onValueChange = modifyNickName)
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Age :")
+            TextField(value = age, onValueChange = modifyAge)
+        }
+
+        Button(onClick = {
+            viewModel.createUserDataToDatabase(nickName = nickName, age = age.toInt())
+        }) {
+            Text(text = "Add/update user Data to DB")
+        }
+
+        // Show targeted user data (if allowed)
+        // ---------------------------------------
+        Divider(
+            color = Color.Gray,
+            thickness = 2.dp,
+            modifier = Modifier.padding(vertical = 20.dp)
+        )
+        Text(text = "Data of user \"Test\"", textDecoration = TextDecoration.Underline)
+        Spacer(Modifier.padding(2.dp))
+        Text(text = "Nickname: ${ targetedUserData.nickname ?: "" }")
+        Text(text = "Age: ${ targetedUserData.age ?: "" }")
+    }
+}
+```
 
 
 
 
-# Routes creation
 
-## NavRoutes
+# navigation creation
+
+## 1 NavRoutes (sealed class)
 Store the routes
 
 
@@ -905,51 +1012,181 @@ sealed class NavRoutes(val route: String) {
 }
 ```
 
-## Nav host + navController
+## 2 MainActivity modification (class)
+### Nav host + navController + some dependecy injections
 
-### MainActivity content (modified)
-- modify the MainActivity class
 
+### Class content 
 ``` kotlin
 class MainActivity : ComponentActivity() {
+    private val db = FirestoreDB.instance
+    private lateinit var cityRepository: CityRepository
+    private lateinit var userDataRepository: UserDataRepository
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        cityRepository = FirestoreCityRepository(db)
+        userDataRepository = FirestoreUserDataRepository(db)
+        
+        enableEdgeToEdge()
         setContent {
-            FirebaseOCTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+            AuthuiFirestoreDemoTheme {
+                val navController = rememberNavController()
+                NavHost(
+                    navController = navController,
+                    startDestination = NavRoutes.Home.route
                 ) {
-                    val navController = rememberNavController()
-                    NavHost(
-                        navController = navController,
-                        startDestination = NavRoutes.Home.route
-                    ) {
-                        composable(NavRoutes.Home.route) {
-                            MainScreen(
-                                navController = navController,
-                            )
-                        }
-                        composable(NavRoutes.Profile.route) {
-                            ProfileScreen(
-                                userDataRepository = userDataRepository
-                            )
-                        }
-                        composable(NavRoutes.Cities.route) {
-                            CitiesScreen(
-                                cityRepository = cityRepository
-                            )
-                        }
+                    composable(NavRoutes.Home.route) {
+                        MainScreen(
+                            navController = navController,
+                        )
+                    }
+                    composable(NavRoutes.Profile.route) {
+                        ProfileScreen(
+                            userDataRepository = userDataRepository
+                        )
+                    }
+                    composable(NavRoutes.Cities.route) {
+                        CitiesScreen(
+                            cityRepository = cityRepository
+                        )
                     }
                 }
+                MainScreen()
             }
         }
     }
 }
 ```
 
+## 3 MainScreen modification (composable)
+navigation implmentation
 
 
+### functions content
+- modify MainScreen
+``` kotlin
+@Composable
+fun MainScreen(
+    navController: NavController
+) {
+    val viewModel: MainViewModel = viewModel()
+    var showSignIn by remember { mutableStateOf(false) }
+    val modifyShowSignIn = { value: Boolean -> showSignIn = value}
+    val signInStatus by viewModel.signInStatus.collectAsStateWithLifecycle()
+    val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
 
+    MyColumn(
+        navController = navController,
+        signInStatus = signInStatus,
+        signedInUser = signedInUser,
+        modifyShowSignIn = modifyShowSignIn,
+        viewModel = viewModel
+    )
+
+
+    // AuthUi signIn Activity call
+    // --------------------------------
+    if (showSignIn) {
+        SignInScreen { result ->
+            // (4) Handle the sign-in result callback
+            // no need to handle RESULT_OK thanks to the AuthStateListener
+            if (result.resultCode != RESULT_OK) {
+                val response = result.idpResponse
+                if (response == null) {
+                    viewModel.onSignInCancel()
+                } else {
+                    val errorCode = response.error?.errorCode
+                    viewModel.onSignInError(errorCode)
+                }
+            }
+            showSignIn = false
+        }
+    }
+}
+
+@Composable
+fun MyColumn(
+    navController: NavController,
+    signInStatus: String,
+    signedInUser: FirebaseUser?,
+    modifyShowSignIn: (Boolean) -> Unit,
+    viewModel: MainViewModel
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+
+        // AUTHUI
+        // ---------
+
+        Spacer(Modifier.padding(2.dp))
+        Text("Sign-in Status: $signInStatus")
+
+        Spacer(Modifier.padding(2.dp))
+        Text("User name: ${signedInUser?.displayName ?: ""}")
+        Text("User Id: ${signedInUser?.uid ?: ""}")
+
+
+        Spacer(Modifier.padding(2.dp))
+        Button(onClick = {
+            modifyShowSignIn(true)
+        }) {
+            Text("Sign In")
+        }
+
+        Spacer(Modifier.padding(2.dp))
+        Button(onClick = {
+            viewModel.onSignOut()
+        }) {
+            Text("Sign Out")
+        }
+
+
+        // FIRESTORE
+        // ------------
+
+        // Go to UserDataScreen
+        // ------------------------
+        Spacer(Modifier.padding(5.dp))
+        Button(onClick = {
+            navController.navigate(NavRoutes.Profile.route)
+        }
+        ) {
+            Text(text = "Go to profile")
+        }
+
+        // Go to CitiesScreen
+        // ------------------------
+        Spacer(Modifier.padding(5.dp))
+        Button(onClick = {
+            navController.navigate(NavRoutes.Cities.route)
+        }
+        ) {
+            Text(text = "Go to Cities")
+        }
+    }
+}
+```
+
+# Firestore rules
+
+in Firebase Site > our project > Firestore Database > Rules
+``` fsl
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cities/{cityId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+   }    
+    match /userdata/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+  	}
+  }
+}
+```
