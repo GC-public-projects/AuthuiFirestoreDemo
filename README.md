@@ -54,17 +54,16 @@ in "root level "build.gradle.kts
 plugins {
 	...
 	id("com.google.gms.google-services") version "4.4.1" apply false
-
 }
 ```
 in "app level" build.gradle.kts 
 ``` kotlin
 plugins {
 	...
+
 	id("com.google.gms.google-services")
 
 }
-
 
 dependencies {
 	...
@@ -77,7 +76,6 @@ dependencies {
 	// When using the BoM, don't specify versions in Firebase dependencies
 
 	implementation("com.google.firebase:firebase-analytics")
-
 }
 
 ```
@@ -87,6 +85,7 @@ in "app level" build.gradle.kts
 ``` kotlin
 dependencies {
 	...
+
 	implementation ("com.firebaseui:firebase-ui-auth:8.0.2")
     implementation("com.google.android.gms:play-services-auth:20.7.0") // ! v21 not compatible with AuthUi (2024/05)
 }
@@ -96,7 +95,9 @@ dependencies {
 As all androidx.lifecycle:lifecycle v2.8 are not compatible for the moment, in addition to add the 2 dependecies in 2.7, "androidx.lifecycle.runtime.ktx" must be changed to 2.7 too ! (with Android Studio Jellyfish, go to libs.versions.toml to change it).  
 in "app level" build.gradle.kts
 ```
+dependencies {
 	...
+
 	// ! all androidx.lifecycle:lifecycle v2.8 not compatible (2024/05)
 	implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0") 
 	implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
@@ -106,6 +107,7 @@ in "app level" build.gradle.kts
 ``` kotlin
 dependencies {
 	...
+
 	implementation("com.google.firebase:firebase-firestore:25.0.0")
 }
 ```
@@ -114,6 +116,7 @@ dependencies {
 ```kotlin
 dependencies {
 	...
+
 	implementation("androidx.navigation:navigation-compose:2.7.7")
 }
 ```
@@ -121,7 +124,7 @@ dependencies {
 # AuthUI implementation
 
 ## 1 Authui SignIn screen (composable)
-This composable take an onSignInresult function as param that will be executed later by rememberLauncherForActivityResult. We will pass the content of the function during the call of the composable later.  
+This composable takes an "onSignInresult" function as param that will be executed later by "rememberLauncherForActivityResult". We will pass the content of the function during the call of the composable later.  
   
 ### Purpose 
 - setup the authentication providers (Mail, google, Github, etc...) (Just "mail" is setup)
@@ -130,7 +133,7 @@ This composable take an onSignInresult function as param that will be executed l
 
 ### function content
 - create package "screens" in the main package (the one of the MainActivity)
-- create Kotlin class/file inside with the content :
+- create Kotlin class/file inside named "SignInScreen"
 - import the dependencies (to do all the time for each content and wont be specified anymore !)
 ``` kotlin
 @Composable
@@ -161,7 +164,7 @@ fun SignInScreen(onSignInResult: (FirebaseAuthUIAuthenticationResult) -> Unit) {
 }
 ```
 ## 2 AuthManager (object)
-Singleton (object) that implements FirebaseAuth.AuthStateListener 
+Singleton (object) that implements "FirebaseAuth.AuthStateListener"
 
 ### Purpose
 The object contents as flow the signed in user (FirebasUser) from FirebaseAuth.getInstance() and the signiedInStatus crated by us.  
@@ -169,7 +172,7 @@ By implementing the AuthStateListener we ensure we have the status and the data 
 
 ### Components explanations
 - FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. In our case as the main of the composables will need the FireBaseAuth, it is better to create a singleton and call it when needed.
-- _firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to test the auth many times each time we need it.
+- _firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to test the auth each time we need it.
 - signiedInUser and signInstates : are both stateFlow, convenient to get data changes in real time thank to a listener here.
 -  override fun onAuthStateChanged : it's the only function obligatory implemented by the interface. It let us make some actions when the FireBaseAuth is modified
 
@@ -211,7 +214,7 @@ Call the Auth Manager
 
 ### Class content
 - in package "screens"
-- create Kotlin class/file named "MainViewModel" inside with the content :
+- create Kotlin class/file named "MainViewModel" inside
 ```kotlin
 class MainViewModel: ViewModel() {
     val signedInUser = AuthManager.signedInUser
@@ -238,11 +241,11 @@ class MainViewModel: ViewModel() {
 ### Components explanations
 - both collectAsStateWithLifecycle() and collectAsState() can be used, collectAsStateWithLifecycle() is better because it stop collecting the flow when the composable is not active.
 - use of "MyColumn" in order to make the composables stateless
-- showSignIn boolean flag obligatory because the Onclick from a button cannot contains a composable. So the composable SIgnInScreen is displayed after the flag becomes true
+- showSignIn boolean flag obligatory because the Onclick from a button cannot contain a composable. So the composable SIgnInScreen is displayed after the flag becomes true
 
 ### functions content
 - in package "screens"
-- create Kotlin class/file named "MainScreen" inside with the content :
+- create Kotlin class/file named "MainScreen"
 ``` kotlin
 @Composable
 fun MainScreen() {
@@ -345,18 +348,18 @@ Each collection has its own documents composition created by us.
 
 We will need to create some rules in the Firestore Console (site) in order to handle the read and write access for the documents in Firestore. Verry quick to implement !
 
-The repositories will follow the approach of non-null returned value as soon as possible. So if the requests to the repos don't return any values for some reasons, an empty object, list, etc.. will be returned instead.
-
+The repositories will follow the approach of non-null returned value as long as possible. So if the requests to the repos don't return any values for some reasons, an empty object, list, etc.. will be returned instead.
 
 
 ## 1 Models
-the 2 models are "data classes". This kind of classe is especially used to serialize/unserialize the documents from FireStore or Real time Database. 
+the 2 models are "data classes". This kind of classes is especially used to serialize/unserialize the documents from FireStore or Real time Database. 
 
 ### 1.1 City (data class)
 
 #### Components explanations
 - constructor() : this(null, null, null, null) : the constructor with null params is needed to read the data from the firebase database. Firestore throws this exception if not implemented: "UserData does not define a no-argument constructor"  
-- will be usefull to not return null but empty objects following the non-null return approach on the repositories
+- will be usefull to not return null but empty objects following the non-null return approach of the repositories
+- the timestamp is usefull to sort the documents by arrival order as they are no numbers assigned to them in function of the cration date
 
 #### Data class content
 - in the main package 
@@ -443,9 +446,12 @@ object FirestoreDB {
 ### 2.4 FirestoreCityRepository (class)
 implementation of the CityRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "cities" collection
 
+#### Components explanations
+- addCity(city: City) : .add is used instead .set because we want to auto generate a document name in the DB fr the city. the name is a String ID.
+
 #### Class content
 - in package "firestore"
-- create kotlin class/file > class named "FirestoreCityRepository "
+- create kotlin class/file > class named "FirestoreCityRepository"
 ``` kotlin
 class FirestoreCityRepository(private val db: FirebaseFirestore): CityRepository {
     override suspend fun addCity(city: City) {

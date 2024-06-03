@@ -36,7 +36,7 @@ class FirestoreCityRepository(private val db: FirebaseFirestore): CityRepository
                 cities.add(city)
             }
         }
-        return cities
+        return cities.sortedBy { it.timestamp }
     }
 
     override suspend fun fetchAllCitiesWithListener(): Flow<List<City>> = callbackFlow {
