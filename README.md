@@ -1,16 +1,17 @@
-# AuthuiFirestoreDemo (Project Workable, Documentation in progress... )
+# AuthuiFirestoreDemo 
+### (Project Workable, Documentation in progress... )
 mini project that mix Authui and Firestore by using Jetpack Compose as toolkit and Kotlin for the language
 
 ## Presentation
 The goal of this demo is to show how the Firestore DB can be called and how the data can be handled after fetching or before sending it to the DB. 
-As it is better to use the less code we can in order to gain in understanding, we will use "Authui", a library that will create for us the screens with the fields needed (activities) to authenticate.  
+As it is better to use the less code we can in order to gain in understanding, we will use "Authui", a library that will create for us the screens with the fields needed (activities) to authenticate.
 Then we will create 2 collections of documents in the Firestore DB and some "CRUD" functions to interact with the data in real time or not.   
 Some rules will be created via The Firebase Console (site) in order to make the data handled with read and/or write rights in funtion of our needs. In short, one collection (cities) will be available for non and authenticated users and the documents of the other collection (userData) will be available only for the users they belong.  
 As we use Jetpack Compose, the patern MVVM (model, view viewModel) will be used to sort the data, the features and the views.
 Except an exception of Firestore "permission" necessary for understanding, to obtain the shortest possible code, the other exceptions will not be managed.
 
 ## Warning
-- The version of the dependencies used here are workable for the project. I figured out, some new versions are not compatible for the moment with some components of our project. I reported the ones that make issues but in the future, it is possible some other new versions of some other libraries wont be compatible too.
+- The version of the dependencies used here are workable for the project. I figured out, some new versions are not compatible for the moment with some components of our project. I reported the ones that make issues but in the future, it is possible some other new versions of some other libraries wont be ddcompatible too.
 
 - With Authui, "Email Enumeration protection" doesn't work, so the use of this library is not a good way to make the app secure. In addition, i had some problems to use the Google authentication way with it, that's why only the mail authentication way will be used here.
 
@@ -447,7 +448,20 @@ object FirestoreDB {
 implementation of the CityRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "cities" collection
 
 #### Components explanations
-- addCity(city: City) : .add is used instead .set because we want to auto generate a document name in the DB fr the city. the name is a String ID.
+- addCity(city: City) : .add is used instead .set because we want to auto generate a document name in the DB for the city. the name is a String ID.
+
+- fetchAllCities() : the function return a simple list of cities
+
+- fetchAllCitiesWithListener() : the function returns as flow a list of cities from the callbackFlow { ... }, in this one we will add a snapshotListener to the "cities" collection. In the snapshotListener, the objects created from the query are rebuilt and returned again when the cities collection is modified. 
+Flows are a modern approach to handle the data from the listeners but it is possible to use Livedata too.  
+
+
+- fetchAllCitiesAndIdWithListener() : same than fetchAllCitiesWithListener() but returns as flow a list of pairs in which each city will be attached to its document ID. This ID will be usefull when we will need to delete a city from the DB. Indeed, contrary to the records of the tables from the relational DBs, the content of the documents (record) don't content any attribute (like primary key) to recognise them in order to delete them. So we need to return the document ID.
+It is possible to add the document ID to the aatributes of the documents but this is not a good way as we will create redundant info.
+
+- deleteCity(cityId: String) : thanks to the document ID of each city, the city will be deleted. Lets add .addOnSuccessListener { ... } and addOnFailureListener { ... } in order to handel the result of the delition (in occurrence some logs)
+
+
 
 #### Class content
 - in package "firestore"
@@ -545,6 +559,15 @@ class FirestoreCityRepository(private val db: FirebaseFirestore): CityRepository
 ### 2.5 FirestoreUserDataRepository (class)
 implementation of the UserDataRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "userdata" collection
 
+#### Purpose
+When an user is created with Firebase Auth, an auto ID that belongs to it is created too. Then for each user, we will have the possibility to create a document that belong to him. This document will have as ID the user ID. We will store these docuemnts in the UserData collection. Later we will create some rules to ensure only the authenticated user be the only one to access its data.
+
+#### Components explanations
+- addOrUpdateUserData(firebaseUser: FirebaseUser, userData: UserData) : By using ".set" we need to specify the document ID.Contrary with .add, it is possible to use many times the same id with different data to call the function. In this case, if the ID already exists, Firestore taht cannot crate 2 documents with the same id in the collection will replace the content of the former document by the new one. This operation consists of an update. Of course if the ID doesn't exist, the document will be created.
+
+- fetchUserData(userId: String) : this function returns an UserData object. Later in the project, we will prove??????????????????????....................
+
+
 #### Class content
 - in package "firestore"
 - create kotlin class/file > class named "FirestoreUserDataRepository"
@@ -552,6 +575,7 @@ implementation of the UserDataRepository interface by using FirestoreDB as depen
 class FirestoreUserDataRepository(
     private val db: FirebaseFirestore
 ) : UserDataRepository {
+
     override suspend fun addOrUpdateUserData(
         firebaseUser: FirebaseUser,
         userData: UserData
