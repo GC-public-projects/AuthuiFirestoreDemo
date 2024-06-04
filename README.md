@@ -450,10 +450,11 @@ implementation of the CityRepository interface by using FirestoreDB as dependecy
 #### Components explanations
 - addCity(city: City) : .add is used instead .set because we want to auto generate a document name in the DB for the city. the name is a String ID.
 
-- fetchAllCities() : the function return a simple list of cities
+- fetchAllCities() : the function return a simple list of cities from the "cities" collection
 
-- fetchAllCitiesWithListener() : the function returns as flow a list of cities from the callbackFlow { ... }, in this one we will add a snapshotListener to the "cities" collection. In the snapshotListener, the objects created from the query are rebuilt and returned again when the cities collection is modified. 
+- fetchAllCitiesWithListener() : the function returns as flow a list of cities from the callbackFlow { ... }, in this one we will add a snapshotListener to the "cities" collection. In the snapshotListener, the objects created from the query are rebuilt and returned again when the cities collection is modified.  
 Flows are a modern approach to handle the data from the listeners but it is possible to use Livedata too.  
+By using the same function with and without listener we will prove when some changes will be done, only the composable attached to the flow will be updated. 
 
 
 - fetchAllCitiesAndIdWithListener() : same than fetchAllCitiesWithListener() but returns as flow a list of pairs in which each city will be attached to its document ID. This ID will be usefull when we will need to delete a city from the DB. Indeed, contrary to the records of the tables from the relational DBs, the content of the documents (record) don't content any attribute (like primary key) to recognise them in order to delete them. So we need to return the document ID.
@@ -565,7 +566,11 @@ When an user is created with Firebase Auth, an auto ID that belongs to it is cre
 #### Components explanations
 - addOrUpdateUserData(firebaseUser: FirebaseUser, userData: UserData) : By using ".set" we need to specify the document ID.Contrary with .add, it is possible to use many times the same id with different data to call the function. In this case, if the ID already exists, Firestore taht cannot crate 2 documents with the same id in the collection will replace the content of the former document by the new one. This operation consists of an update. Of course if the ID doesn't exist, the document will be created.
 
-- fetchUserData(userId: String) : this function returns an UserData object. Later in the project, we will prove??????????????????????....................
+- fetchUserData(userId: String) : this function returns an UserData object. Later in the project, we will prove when the rules will be created, the data that belongs an user is only available for him. If the exception "permission denied" from Firestore is not handled the app crashes when we want to access Userdata that doesn't belong the authenticated user.  
+So when the exception is triggered, as we don't use the null aproach return, an Userdata object will be returned with the error content as "nickname" and 0 as "age". 
+
+- fetchUserDataWithListener(userId: String) : this function return a flow that contains an UserData object. Usefull to see in ral time the changes done.  
+No exception permission denied" 'permission denied" needed here because this function will be called only by the authenticated users to fetch their own data.
 
 
 #### Class content
@@ -626,9 +631,9 @@ class FirestoreUserDataRepository(
         }
 }
 ```
+?????????????????????????????? doc updated before ???????????????????????????????
 
-
-## 3 ViewModels
+## 3 ViewModels 
 
 ### 3.1 CitiesViewModel (class)
 ViewModel linked to "CitiesScreen"
