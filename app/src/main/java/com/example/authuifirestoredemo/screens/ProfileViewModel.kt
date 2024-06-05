@@ -55,6 +55,11 @@ class ProfileViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                _targetedUserData.value = userDataRepository.fetchUserData("yC9aI07rdEQjPurivYtplYPWdsF3") // TO MODIFY !!
+            }
+        }
     }
     fun createUserDataToDatabase(nickName: String, age: Int) {
         viewModelScope.launch {
@@ -62,14 +67,6 @@ class ProfileViewModel(
                 _signedInUser.value?.let {
                     userDataRepository.addOrUpdateUserData(_signedInUser.value!!, UserData(nickName, age))
                 }
-            }
-        }
-    }
-    // purpose : check rules in firestore
-    fun getUserDataFromDb(userId: String) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                _targetedUserData.value = userDataRepository.fetchUserData(userId)
             }
         }
     }

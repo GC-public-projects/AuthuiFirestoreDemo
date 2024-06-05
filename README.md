@@ -760,11 +760,16 @@ class ProfileViewModel(
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                    _signedInUser.value?.let { firebaseUser ->
-                        userDataRepository.fetchUserDataWithListener(firebaseUser.uid).collect {
-                            _userData.value = it
-                        }
+                _signedInUser.value?.let { firebaseUser ->
+                    userDataRepository.fetchUserDataWithListener(firebaseUser.uid).collect {
+                        _userData.value = it
                     }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                _targetedUserData.value = userDataRepository.fetchUserData("yC9aI07rdEQjPurivYtplYPWdsF3") // TO MODIFY !!
             }
         }
     }
@@ -774,14 +779,6 @@ class ProfileViewModel(
                 _signedInUser.value?.let {
                     userDataRepository.addOrUpdateUserData(_signedInUser.value!!, UserData(nickName, age))
                 }
-            }
-        }
-    }
-    // purpose : check rules in firestore
-    fun getUserDataFromDb(userId: String) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                _targetedUserData.value = userDataRepository.fetchUserData(userId)
             }
         }
     }
@@ -956,9 +953,6 @@ fun ProfileScreen(
         age = onlyNumbers
     }
 
-    // targeted userData init (id of Test user)
-    viewModel.getUserDataFromDb("INSERT ONE USER ID HERE !!")
-
     MyColumn(
         viewModel = viewModel,
         signedInUser = signedInUser ,
@@ -1040,10 +1034,6 @@ fun MyColumn(
     }
 }
 ```
-
-
-
-
 
 # navigation creation
 

@@ -45,9 +45,6 @@ fun ProfileScreen(
         age = onlyNumbers
     }
 
-    // targeted userData init (id of Test user)
-    viewModel.getUserDataFromDb("yC9aI07rdEQjPurivYtplYPWdsF3") // TO MODIFY !!
-
     MyColumn(
         viewModel = viewModel,
         signedInUser = signedInUser ,
