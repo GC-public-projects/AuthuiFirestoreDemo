@@ -569,8 +569,8 @@ When an user is created with Firebase Auth, an auto ID that belongs to it is cre
 - fetchUserData(userId: String) : this function returns an UserData object. Later in the project, we will prove when the rules will be created, the data that belongs an user is only available for him. If the exception "permission denied" from Firestore is not handled the app crashes when we want to access Userdata that doesn't belong the authenticated user.  
 So when the exception is triggered, as we don't use the null aproach return, an Userdata object will be returned with the error content as "nickname" and 0 as "age". 
 
-- fetchUserDataWithListener(userId: String) : this function return a flow that contains an UserData object. Usefull to see in ral time the changes done.  
-No exception permission denied" 'permission denied" needed here because this function will be called only by the authenticated users to fetch their own data.
+- fetchUserDataWithListener(userId: String) : this function return a flow that contains an UserData object. Usefull to see in real time the changes done.  
+No exception "permission denied" needed here because this function will be called only by the authenticated users to fetch their own data.
 
 
 #### Class content
@@ -631,12 +631,19 @@ class FirestoreUserDataRepository(
         }
 }
 ```
-?????????????????????????????? doc updated before ???????????????????????????????
 
 ## 3 ViewModels 
 
 ### 3.1 CitiesViewModel (class)
 ViewModel linked to "CitiesScreen"
+
+#### Purpose
+- call CityRepository
+
+#### Components explanations
+-  fun provideFactory(cityRepository: CityRepository) : We placed this function in the companion object as is is linked to this viewModel only anyway. The factory viewmodel patern is obligatory here because we need to pass a paramater to the viewModel (CityRepository). The factory function checks if the viewModel selected (CitiesViewModel) implments Viewmodel and return from the overrided "create" function  the "CitiesViewModel" with the chosen param. The create fuction can be customized following our needs. I think it is overkill to use a factory patern only to pass some paramaters but this is the only way and In case some logic needs to be added later to create the viewModel, the viewModel is already ready for customization.
+
+????????????????????????????? flag doc completed ??????????????????????????????
 
 #### Class content
 - in package "screens"

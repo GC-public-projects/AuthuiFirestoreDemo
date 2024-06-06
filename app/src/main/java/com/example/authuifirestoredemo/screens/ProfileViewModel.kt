@@ -61,6 +61,7 @@ class ProfileViewModel(
             }
         }
     }
+
     fun createUserDataToDatabase(nickName: String, age: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
