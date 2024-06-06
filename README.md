@@ -168,12 +168,12 @@ fun SignInScreen(onSignInResult: (FirebaseAuthUIAuthenticationResult) -> Unit) {
 Singleton (object) that implements "FirebaseAuth.AuthStateListener"
 
 ### Purpose
-The object contents as flow the signed in user (FirebasUser) from FirebaseAuth.getInstance() and the signiedInStatus crated by us.  
+The object contents as flow the signed in user (FirebasUser) from FirebaseAuth.getInstance() and the signiedInStatus created by us.  
 By implementing the AuthStateListener we ensure we have the status and the data in real time of the Firebase user. The singleton will let us get the Auth data in many places without needing to use the dependency injection as it will be needed in the most of the composables.
 
 ### Components explanations
-- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. In our case as the main of the composables will need the FireBaseAuth, it is better to create a singleton and call it when needed.
-- _firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to test the auth each time we need it.
+- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and call it when needed.
+- _firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to call FirebaseAuth.getInstance() each time we need the auth.
 - signiedInUser and signInstates : are both stateFlow, convenient to get data changes in real time thank to a listener here.
 -  override fun onAuthStateChanged : it's the only function obligatory implemented by the interface. It let us make some actions when the FireBaseAuth is modified
 
@@ -340,12 +340,12 @@ class MainActivity : ComponentActivity() {
 # Firestore implementation
 Following MVVM architecture, We will create model classes to serialize the documents from or to Firestore (like a table), then the repository to handle the calls to the DB, hence some other views and viewModels to display the data. MVVM is almost like DAO but Jetpack compose oriented.
 
-We will create 2 collections that will handle some documents with different ways :
+We will create 2 collections in the DB that will handle some documents with different ways :
 Each collection has its own documents composition created by us.
 
-- cities collection > handle some cities, these documents will have an auto ID as name, will be displayed for non or authenticated users and will be modified only byt the authenticated ones.
+- cities collection > handle some cities, these documents will have an auto ID as name, will be displayed for non or authenticated users and will be modified only by the authenticated ones.
 
-- userdata collection > hande the userdata that belongs the user. So each user will have his hown userdata taht will be readable and modifiable only by him. these documents will have as name ther own userID auto created by FIrebaseAuth after the sign-in.
+- userdata collection > hande the userdata that belongs the user. So each user will have his hown userdata that will be readable and modifiable only by him. Each document will have as name the userID it belongs. This Id is auto created by FIrebaseAuth after the sign-in.
 
 We will need to create some rules in the Firestore Console (site) in order to handle the read and write access for the documents in Firestore. Verry quick to implement !
 
@@ -643,7 +643,11 @@ ViewModel linked to "CitiesScreen"
 #### Components explanations
 -  fun provideFactory(cityRepository: CityRepository) : We placed this function in the companion object as is is linked to this viewModel only anyway. The factory viewmodel patern is obligatory here because we need to pass a paramater to the viewModel (CityRepository). The factory function checks if the viewModel selected (CitiesViewModel) implments Viewmodel and return from the overrided "create" function  the "CitiesViewModel" with the chosen param. The create fuction can be customized following our needs. I think it is overkill to use a factory patern only to pass some paramaters but this is the only way and In case some logic needs to be added later to create the viewModel, the viewModel is already ready for customization.
 
-????????????????????????????? flag doc completed ??????????????????????????????
+- \_citiesList : is of type mutableStateListOf\<City\>(), it will be assagnied in the init function the list returned by "cityRepository.fetchAllCities()". Even if "fetchAllCities()" returns a simple list, a "state type is needed". Indeed, the composables will be build before the function have the time to return the list from the DB as it is done in the ViewModelScope with context in an asynchronous way. The state ensure a recomposition once its value will be assigned/modified.
+
+- citiesList : it is the public getter for \_citiesList and its type is of List\<City\>. As "MutableStateList" implements the "List" interface, it is possible to type the getter as a read-only list.
+
+???????????????????????????????? flag ??????????????????????
 
 #### Class content
 - in package "screens"
