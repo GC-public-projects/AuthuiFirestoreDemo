@@ -76,6 +76,7 @@ fun MyColumn(
     ){
         // Create City
         // --------------
+        Spacer(Modifier.padding(40.dp))
         Text(text = "create city Name")
         TextField(value = cityName, onValueChange = modifyCityName)
         Button(onClick = {

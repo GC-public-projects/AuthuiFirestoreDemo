@@ -647,7 +647,9 @@ ViewModel linked to "CitiesScreen"
 
 - citiesList : it is the public getter for \_citiesList and its type is of List\<City\>. As "MutableStateList" implements the "List" interface, it is possible to type the getter as a read-only list.
 
-???????????????????????????????? flag ??????????????????????
+- \_citiesFlowWithListener & \_citiesAndIdFlowWithListener : They are both MutableStateFlow in order to welcome the flows provided by the callBackFLows from the repository. As they are "State", Once the flow is modified thanks to the listner in the callbackflow the UI is recomposed.
+
+- citiesFlowWithListener & citiesAndIdFlowWithListener : they are the getters for the 2 above values and of type "StateFlow". Even if the type "StateFlow" is specifyed, the use of ".asStateFlow()" ensures the use of a read only interface.
 
 #### Class content
 - in package "screens"
