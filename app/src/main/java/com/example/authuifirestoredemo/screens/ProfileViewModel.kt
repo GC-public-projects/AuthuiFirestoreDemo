@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.authuifirestoredemo.data.models.UserData
 import com.example.authuifirestoredemo.data.repos.UserDataRepository
+import com.example.authuifirestoredemo.tools.AuthManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.Dispatchers
@@ -33,8 +34,7 @@ class ProfileViewModel(
             }
         }
     }
-    private val _signedInUser = MutableStateFlow<FirebaseUser?>(null)
-    val signedInUser = _signedInUser.asStateFlow()
+    val signedInUser = AuthManager.signedInUser
 
     private val _userData = MutableStateFlow<UserData>(UserData())
     val userData = _userData.asStateFlow()
@@ -44,11 +44,9 @@ class ProfileViewModel(
 
 
     init {
-        _signedInUser.value = FirebaseAuth.getInstance().currentUser
-
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _signedInUser.value?.let { firebaseUser ->
+                signedInUser.value?.let { firebaseUser ->
                     userDataRepository.fetchUserDataWithListener(firebaseUser.uid).collect {
                         _userData.value = it
                     }
@@ -65,8 +63,8 @@ class ProfileViewModel(
     fun createUserDataToDatabase(nickName: String, age: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _signedInUser.value?.let {
-                    userDataRepository.addOrUpdateUserData(_signedInUser.value!!, UserData(nickName, age))
+                signedInUser.value?.let {
+                    userDataRepository.addOrUpdateUserData(signedInUser.value!!, UserData(nickName, age))
                 }
             }
         }

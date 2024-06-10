@@ -172,9 +172,10 @@ The object contents as flow the signed in user (FirebasUser) from FirebaseAuth.g
 By implementing the AuthStateListener we ensure we have the status and the data in real time of the Firebase user. The singleton will let us get the Auth data in many places without needing to use the dependency injection as it will be needed in the most of the composables.
 
 ### Components explanations
-- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and call it when needed.
+- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. it is required to implement "onAuthStateChanged(auth: FirebaseAuth)" 
+- \_firebaseAuth : it is affected the instance of FirebaseAuth that contents the tools needed for the authentication. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and alway call the same instance of the Auth when needed.
 - _firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to call FirebaseAuth.getInstance() each time we need the auth.
-- signiedInUser and signInstates : are both stateFlow, convenient to get data changes in real time thank to a listener here.
+- \_signiedInUser and \_signInstatus : are both stateFlow, convenient to get data changes in real time thanks to a listener here.
 -  override fun onAuthStateChanged : it's the only function obligatory implemented by the interface. It let us make some actions when the FireBaseAuth is modified
 
 ### object content
@@ -211,6 +212,10 @@ Viewmodel linked to "MainScreen"
 
 ### Purpose
 Call the Auth Manager
+
+### Composnent explanations
+- \_firebaseAuth : 
+- signedInUser : 
 
 
 ### Class content
@@ -460,7 +465,7 @@ By using the same function with and without listener we will prove when some cha
 - fetchAllCitiesAndIdWithListener() : same than fetchAllCitiesWithListener() but returns as flow a list of pairs in which each city will be attached to its document ID. This ID will be usefull when we will need to delete a city from the DB. Indeed, contrary to the records of the tables from the relational DBs, the content of the documents (record) don't content any attribute (like primary key) to recognise them in order to delete them. So we need to return the document ID.
 It is possible to add the document ID to the aatributes of the documents but this is not a good way as we will create redundant info.
 
-- deleteCity(cityId: String) : thanks to the document ID of each city, the city will be deleted. Lets add .addOnSuccessListener { ... } and addOnFailureListener { ... } in order to handel the result of the delition (in occurrence some logs)
+- deleteCity(cityId: String) : thanks to the document ID of each city, the city will be deleted. Lets add .addOnSuccessListener { ... } and addOnFailureListener { ... } in order to handle the result of the delition (in occurrence some logs)
 
 
 
@@ -651,6 +656,12 @@ ViewModel linked to "CitiesScreen"
 
 - citiesFlowWithListener & citiesAndIdFlowWithListener : they are the getters for the 2 above values and of type "StateFlow". Even if the type "StateFlow" is specifyed, the use of ".asStateFlow()" ensures the use of a read only interface.
 
+- init { ... } : All viewModel attributes are assigned data by calling the dedicated repository with asynchronous way 
+
+- createCityToDatabase(name: String, state: String, country: String) : The function, with the values from the view and the current timestamp create a City and record it to the DB.
+
+- deleteCity(id: String) : The function thanks to the city ID from the view will remove the targeted city from the DB
+
 #### Class content
 - in package "screens"
 - create kotlin class/file > class named "CitiesViewModel"
@@ -736,6 +747,20 @@ class CitiesViewModel(
 ### 3.2 ProfileViewModel (class)
 ViewModel linked to "ProfileScreen"
 
+#### Components explanations
+
+- fun provideFactory(userDataRepository: UserDataRepository): factory patern again in order to inject "UserDataRepository" in the viewModel
+
+- signedInUser : of type  StateFlow\<FirebaseUser?\> provided by the Authmanager Singleton
+
+- \_userData & userData : The mutableStateflow with its getter that will be affected in the init() the flow returned by userDataRepository.fetchUserDataWithListener
+
+- \_targetedUserData & targetedUserData : The mutableState and its getter that will be affected in the init() the Userdata object returned by userDataRepository.fetchUserData(). The Id provided is the one of a random user. As we will crate some rules later we will be able to check if the userData targeted will be available in the UI for the authenticated user whose the data belongs or for another one. To get the Id of an user, it is written in the mainScreen or in the profileScreen but also in Firebase Console(site) > project name > FirestoreDatabase > userdatacollection and it should be the id (name) of a document as long as the userdata has been created before by the profileScreen (with the last way we can easyly copy paste the id)
+
+- createUserDataToDatabase(nickName: String, age: Int) : calls addOrUpdateUserData() from UserDataRepository in order the create the UserData document in the db or replace it if a document with the same ID already wascreated.
+
+
+
 #### Class content
 - in package "screens"
 - create kotlin class/file > class named "ProfileViewModel"
@@ -758,8 +783,7 @@ class ProfileViewModel(
             }
         }
     }
-    private val _signedInUser = MutableStateFlow<FirebaseUser?>(null)
-    val signedInUser = _signedInUser.asStateFlow()
+    val signedInUser = AuthManager.signedInUser
 
     private val _userData = MutableStateFlow<UserData>(UserData())
     val userData = _userData.asStateFlow()
@@ -769,11 +793,9 @@ class ProfileViewModel(
 
 
     init {
-        _signedInUser.value = FirebaseAuth.getInstance().currentUser
-
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _signedInUser.value?.let { firebaseUser ->
+                signedInUser.value?.let { firebaseUser ->
                     userDataRepository.fetchUserDataWithListener(firebaseUser.uid).collect {
                         _userData.value = it
                     }
@@ -786,11 +808,12 @@ class ProfileViewModel(
             }
         }
     }
+
     fun createUserDataToDatabase(nickName: String, age: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _signedInUser.value?.let {
-                    userDataRepository.addOrUpdateUserData(_signedInUser.value!!, UserData(nickName, age))
+                signedInUser.value?.let {
+                    userDataRepository.addOrUpdateUserData(signedInUser.value!!, UserData(nickName, age))
                 }
             }
         }
