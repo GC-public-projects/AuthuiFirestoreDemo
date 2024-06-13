@@ -826,9 +826,10 @@ class ProfileViewModel(
 ### 4.1 CitiesScreen (composable)
 
 #### Purpose
-The view with its composables has for purpose to create the cities in the DB and to display them with different ways. Like that we can figure out whitch list is updated in real time and which one not.
+The view with its composables has for purpose to create the cities in the DB and to display them with different ways. Like that we can figure out which list is updated in real time and which one not.
 
 #### Components explanations
+- viewModel : it is of type CitiesViewModel but is assigned the viewModel object from the dedicated library with as param the ViewModelProvider.Factory object created by the provideFactory function of the companion of the Citiesviewmodel class. CityRepository is passed to the viewModel by the provideFactory fun as as param 
 
 - cityName & modifyCityName : linked to the TextField to create the cities
 
@@ -985,6 +986,9 @@ fun CityListItemDeletable(city: City, id: String, viewModel: CitiesViewModel) {
 ```
 
 ### 4.2 ProfileScreen (composable)
+
+#### Purpose
+Display, create and update the Userdata of the authenticated users. also display the data of a chosen user in order to test if the rules created later in Firebase allow us to see the data of the chosen user or not. Normaly, only the authenticated user which the id was chosen should be able to see his data. If a non authenticated user or another authenticated user want to see the date it shouldn't be displayed.
 
 #### Composable content
 - in package "screens"
