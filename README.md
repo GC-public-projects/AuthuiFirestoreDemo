@@ -1,5 +1,6 @@
 # AuthuiFirestoreDemo 
-### (Project Workable, Documentation in progress... )
+
+### Project status : completed
 mini project that mix Authui and Firestore by using Jetpack Compose as toolkit and Kotlin for the language.  
 
 ## target audience
@@ -96,7 +97,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0") // ! v21 not compatible with AuthUi (2024/05)
 }
 ```
-
 ## ViewModel and compose lifecycle dependencies
 As all androidx.lifecycle:lifecycle v2.8 are not compatible for the moment, in addition to add the 2 dependecies in 2.7, "androidx.lifecycle.runtime.ktx" must be changed to 2.7 too ! (with Android Studio Jellyfish, go to libs.versions.toml to change it).  
 in "app level" build.gradle.kts
@@ -213,8 +213,6 @@ object AuthManager : FirebaseAuth.AuthStateListener {
     }
 }
 ```
-
-
 ## 3 MainViewModel (class)
 Viewmodel linked to "MainScreen"
 
@@ -224,7 +222,6 @@ Call the Auth Manager
 ### Composnent explanations
 - \_firebaseAuth : 
 - signedInUser : 
-
 
 ### Class content
 - in package "screens"
@@ -261,7 +258,6 @@ class MainViewModel: ViewModel() {
 Both collectAsStateWithLifecycle() and collectAsState() can be used, collectAsStateWithLifecycle() is better because it stop collecting the flow when the composable is not active.
 
 - use of "MyColumn" in order to make the composables stateless
-
 
 ### functions content
 - in package "screens"
@@ -355,7 +351,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 ```
-
 # Firestore implementation
 Following MVVM architecture, We will create model classes to serialize the documents from or to Firestore (like a table), then the repository to handle the calls to the DB, hence some other views and viewModels to display the data. MVVM is almost like DAO but Jetpack compose oriented.
 
@@ -396,7 +391,6 @@ data class City (
     constructor() : this(null, null, null, null)
 }
 ```
-
 ### 1.2 UserData (data class)
 
 #### Data class content
@@ -410,7 +404,6 @@ data class UserData (
 	constructor() : this(null, null)
 }
 ```
-
 ## 2 Repositories
 
 ### 2.1 CityRepository (interface)
@@ -461,7 +454,6 @@ object FirestoreDB {
     }
 }
 ```
-
 ### 2.4 FirestoreCityRepository (class)
 implementation of the CityRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "cities" collection
 
@@ -473,7 +465,6 @@ implementation of the CityRepository interface by using FirestoreDB as dependecy
 - fetchAllCitiesWithListener() : the function returns as flow a list of cities from the callbackFlow { ... }, in this one we will add a snapshotListener on the "cities" collection. In the snapshotListener, the objects created from the query are rebuilt and returned again when the cities collection is modified.  
 Flows are a modern approach to handle the data from the listeners but it is possible to use Livedata too.  
 By using the same function with and without listener we will prove when some changes will be done, only the composable attached to the flow will be updated. 
-
 
 - fetchAllCitiesAndIdWithListener() : same than fetchAllCitiesWithListener() but returns as flow a list of pairs in which each city will be attached to its document ID. This ID will be useful when we will need to delete a city from the DB. Indeed, contrary to the records of the tables from the relational DBs, the content of the documents (record) don't content any attribute (like primary key) to recognise them in order to delete them. So we need to return the document ID.
 It is possible to add the document ID to the aatributes of the documents but this is not a good way as we will create redundant info.
@@ -759,7 +750,6 @@ class CitiesViewModel(
 ViewModel linked to "ProfileScreen"
 
 #### Components explanations
-
 - fun provideFactory(userDataRepository: UserDataRepository): factory patern again in order to inject "UserDataRepository" in the viewModel
 
 - signedInUser : of type  StateFlow\<FirebaseUser?\> provided by the AuthManager Singleton
@@ -1007,6 +997,8 @@ It is passed by dependency injection an instance of UserDataRepository from the 
 
 - targetedUserData : Behaves too like a state but as it is collected from a flow, it is not updated in real time. So in order to see the changes done to it, (if the targeted use is also authenticated) the screens needs to be left and reached again.
 
+- nickName, modifyNickName, age, modifyAge : Linked to the textFields to create the userData
+
 #### Composable content
 - in package "screens"
 - create Kotlin class/file named "ProfileScreen"
@@ -1129,18 +1121,24 @@ sealed class NavRoutes(val route: String) {
 ## 2 MainActivity modification (class)
 ### Nav host + navController + some dependecy injections
 
+### Components explanations
+- db : The DB singleton is instancitated 1 time and injected in the 2 repositories in the onCreate method 
+
+- cityRepository & UserDataRepository : will be injected in the screens they are related in the NavHost
+
+- navController : is injected only on the MainScreen in order to navigate from it to the other screens. Once on the other screens it's possible to go back to the mainScreen with the dedicated gesture. No Navbar to shorten the code.
+
+
 ### Class content 
 ``` kotlin
 class MainActivity : ComponentActivity() {
-    private val db = FirestoreDB.instance
-    private lateinit var cityRepository: CityRepository
-    private lateinit var userDataRepository: UserDataRepository
+    private val _db = FirestoreDB.instance
+    private val _cityRepository = FirestoreCityRepository(_db)
+    private val _userDataRepository = FirestoreUserDataRepository(_db)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        cityRepository = FirestoreCityRepository(db)
-        userDataRepository = FirestoreUserDataRepository(db)
-        
         enableEdgeToEdge()
         setContent {
             AuthuiFirestoreDemoTheme {
@@ -1156,16 +1154,15 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(NavRoutes.Profile.route) {
                         ProfileScreen(
-                            userDataRepository = userDataRepository
+                            userDataRepository = _userDataRepository
                         )
                     }
                     composable(NavRoutes.Cities.route) {
                         CitiesScreen(
-                            cityRepository = cityRepository
+                            cityRepository = _cityRepository
                         )
                     }
                 }
-                MainScreen()
             }
         }
     }
@@ -1173,7 +1170,12 @@ class MainActivity : ComponentActivity() {
 ```
 
 ## 3 MainScreen modification (composable)
-navigation implmentation
+### navigation implmentation
+
+### Components explanations
+- navcontroller: param of the main screen and will be used to navigate to UserDataScreen and CitiesScreen in the Onclick methods of the 2 new buttons
+
+- Firestore area : 2 new buttons in order to navigate to the other screens
 
 ### functions content
 - modify MainScreen
@@ -1286,6 +1288,16 @@ fun MyColumn(
 
 # Firestore rules
 
+## Components explanations
+
+### "cities" collection 
+- read rights for everybody
+- write rights for authenticated users
+
+### "userData" document
+- read & write rights only for the authenticated user that has the same id than the document one.
+
+## implementation
 in Firebase Site > our project > Firestore Database > Rules
 ``` fsl
 rules_version = '2';

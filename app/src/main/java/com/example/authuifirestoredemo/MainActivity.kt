@@ -7,8 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.authuifirestoredemo.data.repos.CityRepository
-import com.example.authuifirestoredemo.data.repos.UserDataRepository
 import com.example.authuifirestoredemo.data.repos.firestore.FirestoreCityRepository
 import com.example.authuifirestoredemo.data.repos.firestore.FirestoreDB
 import com.example.authuifirestoredemo.data.repos.firestore.FirestoreUserDataRepository
@@ -18,14 +16,12 @@ import com.example.authuifirestoredemo.screens.ProfileScreen
 import com.example.authuifirestoredemo.ui.theme.AuthuiFirestoreDemoTheme
 
 class MainActivity : ComponentActivity() {
-    private val db = FirestoreDB.instance
-    private lateinit var cityRepository: CityRepository
-    private lateinit var userDataRepository: UserDataRepository
+    private val _db = FirestoreDB.instance
+    private val _cityRepository = FirestoreCityRepository(_db)
+    private val _userDataRepository = FirestoreUserDataRepository(_db)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        cityRepository = FirestoreCityRepository(db)
-        userDataRepository = FirestoreUserDataRepository(db)
 
         enableEdgeToEdge()
         setContent {
@@ -42,12 +38,12 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(NavRoutes.Profile.route) {
                         ProfileScreen(
-                            userDataRepository = userDataRepository
+                            userDataRepository = _userDataRepository
                         )
                     }
                     composable(NavRoutes.Cities.route) {
                         CitiesScreen(
-                            cityRepository = cityRepository
+                            cityRepository = _cityRepository
                         )
                     }
                 }
