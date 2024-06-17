@@ -351,6 +351,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 ```
+
+### !! end of AUthui Implementation, the project is ready to be tested for authentication !!
+
 # Firestore implementation
 Following MVVM architecture, We will create model classes to serialize the documents from or to Firestore (like a table), then the repository to handle the calls to the DB, hence some other views and viewModels to display the data. MVVM is almost like DAO but Jetpack compose oriented.
 
