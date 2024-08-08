@@ -4,7 +4,7 @@
 mini project that mix Authui and Firestore by using Jetpack Compose as toolkit and Kotlin for the language.  
 
 ## target audience
-This project if for Jetpack Compose initiated user, so unless for logic comprehension, the native composables won't be explained
+This project is for Jetpack Compose initiated user, so unless for logic comprehension, the native composables won't be explained.
 
 ## Presentation
 The goal of this demo is to show how the Firestore DB can be called and how the data can be handled after fetching or before sending it to the DB. 
