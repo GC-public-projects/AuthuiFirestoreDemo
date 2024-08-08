@@ -27,7 +27,7 @@ Except an exception of Firestore "permission" necessary for understanding, to ob
 # Init
 - create FireBase project in https://console.firebase.google.com/ and enable Google Analytics if needed.
 - create Jetpack Compose project in Android Studio
-- chose for the 2 projects the same name : "AuthuiFirestoreDemo"
+- choose for the 2 projects the same name : "AuthuiFirestoreDemo"
 
 
 ## Firebase Auth
@@ -38,7 +38,7 @@ Except an exception of Firestore "permission" necessary for understanding, to ob
 - enable in Firebase site > projects > build > Firestore Database
 - create database
 - choose db location (irreversible)
-- start in test mode (will be modifyed later)
+- start in test mode (will be modified later)
 
 ## Link app to project with dependencies
 - again in Firebase site go to settings (gear icon next to "project Overview")
