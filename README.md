@@ -10,8 +10,8 @@ This project is for Jetpack Compose initiated user, so unless for logic comprehe
 The goal of this demo is to show how the Firestore DB can be called and how the data can be handled after fetching or before sending it to the DB. 
 As it is better to use the less code we can in order to gain in understanding, we will use "Authui", a library that will create for us the screens with the fields needed (activities) to authenticate.
 Then we will create 2 collections of documents in the Firestore DB and some "CRUD" functions to interact with the data in real time or not.   
-Some rules will be created via The Firebase Console (site) in order to make the data handled with read and/or write rights in funtion of our needs. In short, one collection (cities) will be available for non and authenticated users and the documents of the other collection (userData) will be available only for the users they belong.  
-As we use Jetpack Compose, the patern MVVM (model, view viewModel) will be used to sort the data, the features and the views.
+Some rules will be created via The Firebase Console (site) in order to make the data handled with read and/or write rights in function of our needs. In short, one collection (cities) will be available for non and authenticated users and the documents of the other collection (userData) will be available only for the users they belong.  
+As we use Jetpack Compose, the patern MVVM (model, view, viewModel) will be used to sort the data, the features and the views.
 Except an exception of Firestore "permission" necessary for understanding, to obtain the shortest possible code, the other exceptions will not be managed.
 
 ## Warning
