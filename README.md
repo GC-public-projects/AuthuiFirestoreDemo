@@ -137,7 +137,7 @@ This composable takes an "onSignInresult" function as param that will be execute
 - create the Intent of the sign-in/Sign-up and launch the AuthUI Activity
 - thanks to the function as param, the result of the tasks done in the activity will be handled later.
 
-### function content
+### Content
 - create package "screens" in the main package (the one of the MainActivity)
 - create Kotlin class/file inside named "SignInScreen"
 - import the dependencies (to do all the time for each content and wont be specified anymore !)
@@ -176,17 +176,7 @@ Singleton (object) that implements "FirebaseAuth.AuthStateListener"
 The object contents as flow the signed in user (FirebasUser) from FirebaseAuth.getInstance() and the signiedInStatus created by us.  
 By implementing the AuthStateListener we ensure we have the status and the data in real time of the Firebase user. The singleton will let us get the Auth data in many places without needing to use the dependency injection as it will be needed in the most of the composables.
 
-### Components explanations
-- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. it is required to implement "onAuthStateChanged(auth: FirebaseAuth)" 
-
-- \_firebaseAuth : it is affected the instance of FirebaseAuth that contents the tools needed for the authentication. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and alway call the same instance of the Auth when needed.
-
-- \_firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to call FirebaseAuth.getInstance() each time we need the auth.
-
-- \_signiedInUser and \_signInstatus : are both stateFlow, convenient to get data changes in real time thanks to a listener here.
--  override fun onAuthStateChanged : it's the only function obligatory implemented by the interface. It let us make some actions when the FireBaseAuth is modified
-
-### object content
+### Content
 - create package "tool" in the main package
 - create Kotlin class/file named "AuthManager" inside with the content :
 ``` kotlin
@@ -213,17 +203,23 @@ object AuthManager : FirebaseAuth.AuthStateListener {
     }
 }
 ```
+### Components explanations
+- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. it is required to implement "onAuthStateChanged(auth: FirebaseAuth)" 
+
+- \_firebaseAuth : it is affected the instance of FirebaseAuth that contents the tools needed for the authentication. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and alway call the same instance of the Auth when needed.
+
+- \_firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to call FirebaseAuth.getInstance() each time we need the auth.
+
+- \_signiedInUser and \_signInstatus : are both stateFlow, convenient to get data changes in real time thanks to a listener here.
+-  override fun onAuthStateChanged : it's the only function obligatory implemented by the interface. It let us make some actions when the FireBaseAuth is modified
+
 ## 3 MainViewModel (class)
 Viewmodel linked to "MainScreen"
 
 ### Purpose
 Call the Auth Manager
 
-### Composnent explanations
-- \_firebaseAuth : 
-- signedInUser : 
-
-### Class content
+### Content
 - in package "screens"
 - create Kotlin class/file named "MainViewModel" inside
 ```kotlin
@@ -242,6 +238,9 @@ class MainViewModel: ViewModel() {
     }
 }
 ```
+### Composnent explanations
+- signedInUser : assigned from AuthManager dedicated attribute
+- signedInStatus : assigned from AuthManager dedicated attribute
 
 ## 4 MainScreen & MyColumn (composables)
 
@@ -249,17 +248,7 @@ class MainViewModel: ViewModel() {
 - show the Signin status and some info of the Signed in user
 - call of SignInScreen composable via Button
 
-### Components explanations
-- viewModel : of Type MainViewModel and is affected the viewModel object from the dedicated library. As no params ara passed, we don't need factory patern
-
-- showSignIn and modifyShowSignIn : flag to be used in order to display the AuthUI SignInactivity when the button "Sign in" is pressed. As no composables can be inside the "onClick" method of the button, we need to use flag.
-
-- signedInUser and signInStatus : FireBaseUser? and String Auth status collected from the  flowsfrom the viewModel itself got from the AuthManager. thay behaves like state as we used the delegation "by" on states.  
-Both collectAsStateWithLifecycle() and collectAsState() can be used, collectAsStateWithLifecycle() is better because it stop collecting the flow when the composable is not active.
-
-- use of "MyColumn" in order to make the composables stateless
-
-### functions content
+### Content
 - in package "screens"
 - create Kotlin class/file named "MainScreen"
 ``` kotlin
@@ -334,10 +323,20 @@ fun MyColumn(
 }
 ```
 
+### Components explanations
+- viewModel : of Type MainViewModel and is affected the viewModel object from the dedicated library. As no params ara passed, we don't need factory patern
+
+- showSignIn and modifyShowSignIn : flag to be used in order to display the AuthUI SignInactivity when the button "Sign in" is pressed. As no composables can be inside the "onClick" method of the button, we need to use flag.
+
+- signedInUser and signInStatus : FireBaseUser? and String Auth status collected from the  flowsfrom the viewModel itself got from the AuthManager. thay behaves like state as we used the delegation "by" on states.  
+Both collectAsStateWithLifecycle() and collectAsState() can be used, collectAsStateWithLifecycle() is better because it stop collecting the flow when the composable is not active.
+
+- use of "MyColumn" in order to make the composables stateless
+
 ## 5 MainActivity (composable)
 For the moment, the purpose is just to call MainScreen()  
 
-### Class content
+### Content
 ``` kotlin
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -374,12 +373,7 @@ the 2 models are "data classes". This kind of classes is especially used to seri
 
 ### 1.1 City (data class)
 
-#### Components explanations
-- constructor() : this(null, null, null, null) : the constructor with null params is needed to read the data from the firebase database. Firestore throws this exception if not implemented: "UserData does not define a no-argument constructor"  
-- will be useful to not return null but empty objects following the non-null return approach of the repositories
-- the timestamp is useful to sort the documents by arrival order as they are no numbers assigned to them in function of the cration date
-
-#### Data class content
+#### Content
 - in the main package 
 - create package "data"
 - inside create package "models"
@@ -394,9 +388,14 @@ data class City (
     constructor() : this(null, null, null, null)
 }
 ```
+#### Components explanations
+- constructor() : this(null, null, null, null) : the constructor with null params is needed to read the data from the firebase database. Firestore throws this exception if not implemented: "UserData does not define a no-argument constructor"  
+- will be useful to not return null but empty objects following the non-null return approach of the repositories
+- the timestamp is useful to sort the documents by arrival order as they are no numbers assigned to them in function of the cration date
+
 ### 1.2 UserData (data class)
 
-#### Data class content
+#### Content
 - in package "models"
 - create kotlin class/file > data class named "UserData"
 ``` kotlin
@@ -412,7 +411,7 @@ data class UserData (
 ### 2.1 CityRepository (interface)
 Contract or scheme that will be implemented by the Firestore CityRepository in our project. The interface make the code flexible and in case we want to implement another DB or a mock repos for test purposes.
 
-#### Interface content
+#### Content
 - in package "data"
 - create package "repos"
 - inside create kotlin class/file > interface named "CityRepository"
@@ -429,7 +428,7 @@ interface CityRepository {
 ### 2.2 UserDataRepository (interface)
 contract again with same purpose but for the Firestore UserDataRepository
 
-#### Interface content
+#### Content
 - in package "repos"
 - create kotlin class/file > interface named "UserDataRepository"
 ``` kotlin
@@ -443,10 +442,7 @@ interface UserDataRepository {
 ### 2.3 FirestoreDB (object)
 Singleton that content the instance of the Firestore DB
 
-#### Components explanations
-By lazy is used here but not mandatory as the object instanciations are implicitely lazy. If "lazy is not explicitely used" like that "val instance = Firebase.firestore", it works but Android Studio displays A warning about potential memory leaks du to static fields.
-
-#### Object content
+#### Content
 - in package "repos"
 - create package "firestore"
 - inside create kotlin class/file > object named "FirestoreDB"
@@ -457,24 +453,13 @@ object FirestoreDB {
     }
 }
 ```
+#### Components explanations
+By lazy is used here but not mandatory as the object instanciations are implicitely lazy. If "lazy is not explicitely used" like that "val instance = Firebase.firestore", it works but Android Studio displays A warning about potential memory leaks du to static fields.
+
 ### 2.4 FirestoreCityRepository (class)
 implementation of the CityRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "cities" collection
 
-#### Components explanations
-- addCity(city: City) : .add is used instead .set because we want to auto generate a document name in the DB for the city. the name is a String ID.
-
-- fetchAllCities() : the function return a simple list of cities from the "cities" collection
-
-- fetchAllCitiesWithListener() : the function returns as flow a list of cities from the callbackFlow { ... }, in this one we will add a snapshotListener on the "cities" collection. In the snapshotListener, the objects created from the query are rebuilt and returned again when the cities collection is modified.  
-Flows are a modern approach to handle the data from the listeners but it is possible to use Livedata too.  
-By using the same function with and without listener we will prove when some changes will be done, only the composable attached to the flow will be updated. 
-
-- fetchAllCitiesAndIdWithListener() : same than fetchAllCitiesWithListener() but returns as flow a list of pairs in which each city will be attached to its document ID. This ID will be useful when we will need to delete a city from the DB. Indeed, contrary to the records of the tables from the relational DBs, the content of the documents (record) don't content any attribute (like primary key) to recognise them in order to delete them. So we need to return the document ID.
-It is possible to add the document ID to the aatributes of the documents but this is not a good way as we will create redundant info.
-
-- deleteCity(cityId: String) : thanks to the document ID of each city, the city will be deleted. Lets add .addOnSuccessListener { ... } and addOnFailureListener { ... } in order to handle the result of the delition (in occurrence some logs)
-
-#### Class content
+#### Content
 - in package "firestore"
 - create kotlin class/file > class named "FirestoreCityRepository"
 ``` kotlin
@@ -566,6 +551,19 @@ class FirestoreCityRepository(private val db: FirebaseFirestore): CityRepository
     }
 }
 ```
+#### Components explanations
+- addCity(city: City) : .add is used instead .set because we want to auto generate a document name in the DB for the city. the name is a String ID.
+
+- fetchAllCities() : the function return a simple list of cities from the "cities" collection
+
+- fetchAllCitiesWithListener() : the function returns as flow a list of cities from the callbackFlow { ... }, in this one we will add a snapshotListener on the "cities" collection. In the snapshotListener, the objects created from the query are rebuilt and returned again when the cities collection is modified.  
+Flows are a modern approach to handle the data from the listeners but it is possible to use Livedata too.  
+By using the same function with and without listener we will prove when some changes will be done, only the composable attached to the flow will be updated. 
+
+- fetchAllCitiesAndIdWithListener() : same than fetchAllCitiesWithListener() but returns as flow a list of pairs in which each city will be attached to its document ID. This ID will be useful when we will need to delete a city from the DB. Indeed, contrary to the records of the tables from the relational DBs, the content of the documents (record) don't content any attribute (like primary key) to recognise them in order to delete them. So we need to return the document ID.
+It is possible to add the document ID to the aatributes of the documents but this is not a good way as we will create redundant info.
+
+- deleteCity(cityId: String) : thanks to the document ID of each city, the city will be deleted. Lets add .addOnSuccessListener { ... } and addOnFailureListener { ... } in order to handle the result of the delition (in occurrence some logs)
 
 ### 2.5 FirestoreUserDataRepository (class)
 implementation of the UserDataRepository interface by using FirestoreDB as dependecy injection to make the different calls to the Firestore DB in the "userdata" collection
@@ -573,17 +571,7 @@ implementation of the UserDataRepository interface by using FirestoreDB as depen
 #### Purpose
 When an user is created with Firebase Auth, an auto ID that belongs to it is created too. Then for each user, we will have the possibility to create a document that belong to him. This document will have as ID the user ID. We will store these docuemnts in the UserData collection. Later we will create some rules to ensure only the authenticated user be the only one to access its data.
 
-#### Components explanations
-- addOrUpdateUserData(firebaseUser: FirebaseUser, userData: UserData) : By using ".set" we need to specify the document ID.Contrary with .add, it is possible to use many times the same id with different data to call the function. In this case, if the ID already exists, Firestore taht cannot crate 2 documents with the same id in the collection will replace the content of the former document by the new one. This operation consists of an update. Of course if the ID doesn't exist, the document will be created.
-
-- fetchUserData(userId: String) : this function returns an UserData object. Later in the project, we will prove when the rules will be created, the data that belongs an user is only available for him. If the exception "permission denied" from Firestore is not handled the app crashes when we want to access Userdata that doesn't belong the authenticated user.  
-So when the exception is triggered, as we don't use the null aproach return, an Userdata object will be returned with the error content as "nickname" and 0 as "age". 
-
-- fetchUserDataWithListener(userId: String) : this function return a flow that contains an UserData object. Useful to see in real time the changes done.  
-No exception "permission denied" needed here because this function will be called only by the authenticated users to fetch their own data.
-
-
-#### Class content
+#### Content
 - in package "firestore"
 - create kotlin class/file > class named "FirestoreUserDataRepository"
 ``` kotlin
@@ -641,6 +629,14 @@ class FirestoreUserDataRepository(
         }
 }
 ```
+#### Components explanations
+- addOrUpdateUserData(firebaseUser: FirebaseUser, userData: UserData) : By using ".set" we need to specify the document ID.Contrary with .add, it is possible to use many times the same id with different data to call the function. In this case, if the ID already exists, Firestore taht cannot crate 2 documents with the same id in the collection will replace the content of the former document by the new one. This operation consists of an update. Of course if the ID doesn't exist, the document will be created.
+
+- fetchUserData(userId: String) : this function returns an UserData object. Later in the project, we will prove when the rules will be created, the data that belongs an user is only available for him. If the exception "permission denied" from Firestore is not handled the app crashes when we want to access Userdata that doesn't belong the authenticated user.  
+So when the exception is triggered, as we don't use the null aproach return, an Userdata object will be returned with the error content as "nickname" and 0 as "age". 
+
+- fetchUserDataWithListener(userId: String) : this function return a flow that contains an UserData object. Useful to see in real time the changes done.  
+No exception "permission denied" needed here because this function will be called only by the authenticated users to fetch their own data.
 
 ## 3 ViewModels 
 
@@ -650,24 +646,7 @@ ViewModel linked to "CitiesScreen"
 #### Purpose
 - call CityRepository
 
-#### Components explanations
--  fun provideFactory(cityRepository: CityRepository) : We placed this function in the companion object as is is linked to this viewModel only anyway. The factory viewmodel patern is obligatory here because we need to pass a paramater to the viewModel (CityRepository). The factory function checks if the viewModel selected (CitiesViewModel) implments Viewmodel and return from the overrided "create" function  the "CitiesViewModel" with the chosen param. The create fuction can be customized following our needs. I think it is overkill to use a factory patern only to pass some paramaters but this is the only way and In case some logic needs to be added later to create the viewModel, the viewModel is already ready for customization.
-
-- \_citiesList : is of type mutableStateListOf\<City\>(), it will be assagnied in the init function the list returned by "cityRepository.fetchAllCities()". Even if "fetchAllCities()" returns a simple list, a "state type is needed". Indeed, the composables will be build before the function have the time to return the list from the DB as it is done in the ViewModelScope with context in an asynchronous way. The state ensure a recomposition once its value will be assigned/modified.
-
-- citiesList : it is the public getter for \_citiesList and its type is of List\<City\>. As "MutableStateList" implements the "List" interface, it is possible to type the getter as a read-only list.
-
-- \_citiesFlowWithListener & \_citiesAndIdFlowWithListener : They are both MutableStateFlow in order to welcome the flows provided by the callBackFLows from the repository. As they are "State", Once the flow is modified thanks to the listner in the callbackflow the UI is recomposed.
-
-- citiesFlowWithListener & citiesAndIdFlowWithListener : they are the getters for the 2 above values and of type "StateFlow". Even if the type "StateFlow" is specifyed, the use of ".asStateFlow()" ensures the use of a read only interface.
-
-- init { ... } : All viewModel attributes are assigned data by calling the dedicated repository with asynchronous way 
-
-- createCityToDatabase(name: String, state: String, country: String) : The function, with the values from the view and the current timestamp create a City and record it to the DB.
-
-- deleteCity(id: String) : The function thanks to the city ID from the view will remove the targeted city from the DB
-
-#### Class content
+#### Content
 - in package "screens"
 - create kotlin class/file > class named "CitiesViewModel"
 ``` kotlin
@@ -749,21 +728,27 @@ class CitiesViewModel(
 }
 ```
 
+#### Components explanations
+-  fun provideFactory(cityRepository: CityRepository) : We placed this function in the companion object as is is linked to this viewModel only anyway. The factory viewmodel patern is obligatory here because we need to pass a paramater to the viewModel (CityRepository). The factory function checks if the viewModel selected (CitiesViewModel) implments Viewmodel and return from the overrided "create" function  the "CitiesViewModel" with the chosen param. The create fuction can be customized following our needs. I think it is overkill to use a factory patern only to pass some paramaters but this is the only way and In case some logic needs to be added later to create the viewModel, the viewModel is already ready for customization.
+
+- \_citiesList : is of type mutableStateListOf\<City\>(), it will be assagnied in the init function the list returned by "cityRepository.fetchAllCities()". Even if "fetchAllCities()" returns a simple list, a "state type is needed". Indeed, the composables will be build before the function have the time to return the list from the DB as it is done in the ViewModelScope with context in an asynchronous way. The state ensure a recomposition once its value will be assigned/modified.
+
+- citiesList : it is the public getter for \_citiesList and its type is of List\<City\>. As "MutableStateList" implements the "List" interface, it is possible to type the getter as a read-only list.
+
+- \_citiesFlowWithListener & \_citiesAndIdFlowWithListener : They are both MutableStateFlow in order to welcome the flows provided by the callBackFLows from the repository. As they are "State", Once the flow is modified thanks to the listner in the callbackflow the UI is recomposed.
+
+- citiesFlowWithListener & citiesAndIdFlowWithListener : they are the getters for the 2 above values and of type "StateFlow". Even if the type "StateFlow" is specifyed, the use of ".asStateFlow()" ensures the use of a read only interface.
+
+- init { ... } : All viewModel attributes are assigned data by calling the dedicated repository with asynchronous way 
+
+- createCityToDatabase(name: String, state: String, country: String) : The function, with the values from the view and the current timestamp create a City and record it to the DB.
+
+- deleteCity(id: String) : The function thanks to the city ID from the view will remove the targeted city from the DB
+
 ### 3.2 ProfileViewModel (class)
 ViewModel linked to "ProfileScreen"
 
-#### Components explanations
-- fun provideFactory(userDataRepository: UserDataRepository): factory patern again in order to inject "UserDataRepository" in the viewModel
-
-- signedInUser : of type  StateFlow\<FirebaseUser?\> provided by the AuthManager Singleton
-
-- \_userData & userData : The mutableStateflow with its getter that will be affected in the init() the flow returned by userDataRepository.fetchUserDataWithListener
-
-- \_targetedUserData & targetedUserData : The mutableState and its getter that will be affected in the init() the Userdata object returned by userDataRepository.fetchUserData(). The Id provided is the one of a random user. As we will crate some rules later we will be able to check if the userData targeted will be available in the UI for the authenticated user whose the data belongs or for another one. To get the Id of an user, it is written in the mainScreen or in the profileScreen but also in Firebase Console(site) > project name > FirestoreDatabase > userdatacollection and it should be the id (name) of a document as long as the userdata has been created before by the profileScreen (with the last way we can easyly copy paste the id)
-
-- createUserDataToDatabase(nickName: String, age: Int) : calls addOrUpdateUserData() from UserDataRepository in order the create the UserData document in the db or replace it if a document with the same ID already has been already created.
-
-#### Class content
+#### Content
 - in package "screens"
 - create kotlin class/file > class named "ProfileViewModel"
 ``` kotlin
@@ -822,6 +807,16 @@ class ProfileViewModel(
     }
 }
 ```
+#### Components explanations
+- fun provideFactory(userDataRepository: UserDataRepository): factory patern again in order to inject "UserDataRepository" in the viewModel
+
+- signedInUser : of type  StateFlow\<FirebaseUser?\> provided by the AuthManager Singleton
+
+- \_userData & userData : The mutableStateflow with its getter that will be affected in the init() the flow returned by userDataRepository.fetchUserDataWithListener
+
+- \_targetedUserData & targetedUserData : The mutableState and its getter that will be affected in the init() the Userdata object returned by userDataRepository.fetchUserData(). The Id provided is the one of a random user. As we will crate some rules later we will be able to check if the userData targeted will be available in the UI for the authenticated user whose the data belongs or for another one. To get the Id of an user, it is written in the mainScreen or in the profileScreen but also in Firebase Console(site) > project name > FirestoreDatabase > userdatacollection and it should be the id (name) of a document as long as the userdata has been created before by the profileScreen (with the last way we can easyly copy paste the id)
+
+- createUserDataToDatabase(nickName: String, age: Int) : calls addOrUpdateUserData() from UserDataRepository in order the create the UserData document in the db or replace it if a document with the same ID already has been already created.
 
 ## 4 Views
 
@@ -830,24 +825,7 @@ class ProfileViewModel(
 #### Purpose
 The view with its composables has for purpose to create the cities in the DB and to display them with different ways. Like that we can figure out which list is updated in real time and which one not. It is passed by dependency injection an instance of Cityropository from the main Activity.
 
-#### Components explanations
-- viewModel : it is of type CitiesViewModel but is assigned the viewModel object from the dedicated library with as param the ViewModelProvider.Factory object created by the provideFactory function of the companion of the Citiesviewmodel class. CityRepository is passed to the viewModel by the provideFactory fun as as param 
-
-- cityName & modifyCityName : linked to the TextField to create the cities
-
-- citiesWithoutListener : it is a list as the getter was typed as List but remains a StateList
-
-- citiesWithListener : It is a list too, but behaves like a state as we used the delegation "by" to get the State\<List\<City\>\> provided by collectAsStateWithLifecycle() itself created from the flow.
-
-- citiesAndIdWithListener : same behavior than citiesWithListener but it is a  List\<Pair\<City, String\>\>. We need an Id linked to each city in order to be able to target and delete the cities in the "CityListItemDeletable" composable.
-
-- MyColumn : By creating a composable and passing all the states vars/consts by dependency injection we ensure the compasable are stateless and only CitiesScreen is stateful. A better approach would have been to keep the column in the CitiesScreen and each time a composable needs a state as param, create a custom version of it in order to make it stateless. But that makes the code bigger and less understandable.
-
-CityListItem(city: City) : the composable is a customized card that order and display a city. it is used in the Lazycolums that handle the cities lists.
-
-CityListItemDeletable(city: City, id: String, viewModel: CitiesViewModel) : Same goal than CityListItem but build with a delete button in order to delete the city. The composable takes 2 more params then CityListItem, an ID in order to target the city to delete, the viewModel from the view in order to call the repository deletion function by passing the ID as param.
-
-#### Composable content
+#### Content
 - in package "screens"
 - create Kotlin class/file named "CitiesScreen"
 ``` kotlin
@@ -987,22 +965,30 @@ fun CityListItemDeletable(city: City, id: String, viewModel: CitiesViewModel) {
 }
 ```
 
+#### Components explanations
+- viewModel : it is of type CitiesViewModel but is assigned the viewModel object from the dedicated library with as param the ViewModelProvider.Factory object created by the provideFactory function of the companion of the Citiesviewmodel class. CityRepository is passed to the viewModel by the provideFactory fun as as param 
+
+- cityName & modifyCityName : linked to the TextField to create the cities
+
+- citiesWithoutListener : it is a list as the getter was typed as List but remains a StateList
+
+- citiesWithListener : It is a list too, but behaves like a state as we used the delegation "by" to get the State\<List\<City\>\> provided by collectAsStateWithLifecycle() itself created from the flow.
+
+- citiesAndIdWithListener : same behavior than citiesWithListener but it is a  List\<Pair\<City, String\>\>. We need an Id linked to each city in order to be able to target and delete the cities in the "CityListItemDeletable" composable.
+
+- MyColumn : By creating a composable and passing all the states vars/consts by dependency injection we ensure the compasable are stateless and only CitiesScreen is stateful. A better approach would have been to keep the column in the CitiesScreen and each time a composable needs a state as param, create a custom version of it in order to make it stateless. But that makes the code bigger and less understandable.
+
+CityListItem(city: City) : the composable is a customized card that order and display a city. it is used in the Lazycolums that handle the cities lists.
+
+CityListItemDeletable(city: City, id: String, viewModel: CitiesViewModel) : Same goal than CityListItem but build with a delete button in order to delete the city. The composable takes 2 more params then CityListItem, an ID in order to target the city to delete, the viewModel from the view in order to call the repository deletion function by passing the ID as param.
+
 ### 4.2 ProfileScreen (composable)
 
 #### Purpose
 Display, create and update the Userdata of the authenticated users. also display the data of a chosen user in order to test if the rules created later in Firebase allow us to see the data of the chosen user or not. Normaly, only the authenticated user which the id was chosen should be able to see his data. If a non authenticated user or another authenticated user want to see the date it shouldn't be displayed.  
 It is passed by dependency injection an instance of UserDataRepository from the Main activity.
 
-#### Components explanations
-- viewModel : UserDataRepository as param thanks to the factory patern
-
-- userData : UserData object collected from the flow provided by the viewModel itself provided by the repository. Thanks to the listener and the Stateflow, the UserData is updated in real time. userData behaves like a state as we used the delegation "by" to a State\<UserData\>.
-
-- targetedUserData : Behaves too like a state but as it is collected from a flow, it is not updated in real time. So in order to see the changes done to it, (if the targeted use is also authenticated) the screens needs to be left and reached again.
-
-- nickName, modifyNickName, age, modifyAge : Linked to the textFields to create the userData
-
-#### Composable content
+#### Content
 - in package "screens"
 - create Kotlin class/file named "ProfileScreen"
 ``` kotlin
@@ -1105,13 +1091,21 @@ fun MyColumn(
     }
 }
 ```
+#### Components explanations
+- viewModel : UserDataRepository as param thanks to the factory patern
+
+- userData : UserData object collected from the flow provided by the viewModel itself provided by the repository. Thanks to the listener and the Stateflow, the UserData is updated in real time. userData behaves like a state as we used the delegation "by" to a State\<UserData\>.
+
+- targetedUserData : Behaves too like a state but as it is collected from a flow, it is not updated in real time. So in order to see the changes done to it, (if the targeted use is also authenticated) the screens needs to be left and reached again.
+
+- nickName, modifyNickName, age, modifyAge : Linked to the textFields to create the userData
 
 # navigation creation
 
 ## 1 NavRoutes (sealed class)
 Store the routes
 
-### Class content
+### Content
 - in the main package (the one of the MainActivity)
 - create Kotlin class/file named "NavRoutes" inside with the content :
 ``` kotlin
@@ -1122,17 +1116,12 @@ sealed class NavRoutes(val route: String) {
 }
 ```
 ## 2 MainActivity modification (class)
-### Nav host + navController + some dependecy injections
 
-### Components explanations
-- db : The DB singleton is instancitated 1 time and injected in the 2 repositories in the onCreate method 
+### Purpose
+Implementation of Nav host + navController + some dependecy injections
 
-- cityRepository & UserDataRepository : will be injected in the screens they are related in the NavHost
-
-- navController : is injected only on the MainScreen in order to navigate from it to the other screens. Once on the other screens it's possible to go back to the mainScreen with the dedicated gesture. No Navbar to shorten the code.
-
-
-### Class content 
+### Content 
+- Modify MainActivity
 ``` kotlin
 class MainActivity : ComponentActivity() {
     private val _db = FirestoreDB.instance
@@ -1172,15 +1161,24 @@ class MainActivity : ComponentActivity() {
 }
 ```
 
+### Components explanations
+- db : The DB singleton is instancitated 1 time and injected in the 2 repositories in the onCreate method 
+
+- cityRepository & UserDataRepository : will be injected in the screens they are related in the NavHost
+
+- navController : is injected only on the MainScreen in order to navigate from it to the other screens. Once on the other screens it's possible to go back to the mainScreen with the dedicated gesture. No Navbar to shorten the code.
+
 ## 3 MainScreen modification (composable)
-### navigation implmentation
+
+### Purpose
+navigation implmentation
 
 ### Components explanations
 - navcontroller: param of the main screen and will be used to navigate to UserDataScreen and CitiesScreen in the Onclick methods of the 2 new buttons
 
 - Firestore area : 2 new buttons in order to navigate to the other screens
 
-### functions content
+### Content
 - modify MainScreen
 ``` kotlin
 @Composable
@@ -1291,15 +1289,6 @@ fun MyColumn(
 
 # Firestore rules
 
-## Components explanations
-
-### "cities" collection 
-- read rights for everybody
-- write rights for authenticated users
-
-### "userData" document
-- read & write rights only for the authenticated user that has the same id than the document one.
-
 ## implementation
 in Firebase Site > our project > Firestore Database > Rules
 ``` fsl
@@ -1317,3 +1306,12 @@ service cloud.firestore {
   }
 }
 ```
+
+## Components explanations
+
+### "cities" collection 
+- read rights for everybody
+- write rights for authenticated users
+
+### "userData" document
+- read & write rights only for the authenticated user that has the same id than the document one.
