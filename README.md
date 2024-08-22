@@ -204,13 +204,13 @@ object AuthManager : FirebaseAuth.AuthStateListener {
 }
 ```
 ### Components explanations
-- FirebaseAuth.AuthStateListener : this interface can be implemented by an activity or a viewModel. it is required to implement "onAuthStateChanged(auth: FirebaseAuth)" 
+- `FirebaseAuth.AuthStateListener` : this interface can be implemented by an activity or a viewModel. it is required to implement "onAuthStateChanged(auth: FirebaseAuth)" 
 
-- \_firebaseAuth : it is affected the instance of FirebaseAuth that contents the tools needed for the authentication. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and alway call the same instance of the Auth when needed.
+- `\_firebaseAuth` : it is affected the instance of FirebaseAuth that contents the tools needed for the authentication. In our case, as the main of the composables will need the FireBaseAuth, it is better to create a singleton and alway call the same instance of the Auth when needed.
 
-- \_firebaseAuth.addAuthStateListener(this) : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to call FirebaseAuth.getInstance() each time we need the auth.
+- `\_firebaseAuth.addAuthStateListener(this)`` : The AuthStateListener oberves the changes in real time of the auth, thanks to it, we don't need to call FirebaseAuth.getInstance() each time we need the auth.
 
-- \_signiedInUser and \_signInstatus : are both stateFlow, convenient to get data changes in real time thanks to a listener here.
+- `\_signiedInUser and \_signInstatus` : are both stateFlow, convenient to get data changes in real time thanks to a listener here.
 -  override fun onAuthStateChanged : it's the only function obligatory implemented by the interface. It let us make some actions when the FireBaseAuth is modified
 
 ## 3 MainViewModel (class)
