@@ -14,6 +14,36 @@ Some rules will be created via The Firebase Console (site) in order to make the 
 As we use Jetpack Compose, the patern MVVM (model, view, viewModel) will be used to sort the data, the features and the views.
 Except an exception of Firestore "permission" necessary for understanding, to obtain the shortest possible code, the other exceptions will not be managed.
 
+## Overview
+- 1 : MainScreen not signed in
+- 2 : Authui sign in screen
+- 3 : Authui sign up screen
+- 4 : MainScreen signed in
+- 5 : Authui Welcome back screen
+- 6 : ProfileScreen no user data
+- 7 : ProfileScreen with user data
+- 8 : ProfileScreen with "test" user signed in 
+- 9 : CitiesScreen empty
+- 10 : CitiesScreen with one city
+
+
+<img src="/screenshots/1.png" alt="MainScreen not signed in" height="390">&emsp;
+<img src="/screenshots/2.png" alt="Authui sign in screen" height="390">&emsp;
+<img src="/screenshots/3.png" alt="Authui sign up screen" height="390">&emsp;
+<img src="/screenshots/4.png" alt="MainScreen signed in" height="390">&emsp;
+
+
+<img src="/screenshots/5.png" alt="Authui Welcome back screen" height="390">&emsp;
+<img src="/screenshots/6.png" alt="ProfileScreen no user data" height="390">&emsp;
+<img src="/screenshots/7.png" alt="ProfileScreen with user data" height="390">&emsp;
+<img src="/screenshots/8.png" alt="ProfileScreen with test user signed in" height="390">&emsp;
+
+
+<img src="/screenshots/9.png" alt="CitiesScreen empty" height="390">&emsp;
+<img src="/screenshots/10.png" alt="CitiesScreen with one city" height="390">&emsp;
+
+
+
 ## Warning
 - The version of the dependencies used here are workable for the project. I figured out, some new versions are not compatible for the moment with some components of our project. I reported the ones that make issues but in the future, it is possible some other new versions of some other libraries wont be compatible too.
 
